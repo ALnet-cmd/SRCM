@@ -526,15 +526,16 @@ export default function SimRacingApp() {
       return (
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="p-6" style={{ backgroundColor: theme.primary }}>
-            <h2 className="text-2xl font-bold text-white flex items-center"><Award className="w-8 h-8 mr-3" />Classifica Piloti</h2>
+            <h2 className="text-2xl font-bold text-white flex items-center"><Award className="w-8 h-8 mr-3
+              " />Classifica Piloti</h2>
           </div>
           <table className="w-full">
             <thead style={{ backgroundColor: theme.secondary }}>
               <tr className="text-white">
                 <th className="px-6 py-3 text-left">Posizione</th>
                 <th className="px-6 py-3 text-left">Numero</th>
-                <th className="px-6 py-3 text-left">Pilota
-                  <th className="px-6 py-3 text-left">Team</th>
+                <th className="px-6 py-3 text-left">Pilota</th>
+                <th className="px-6 py-3 text-left">Team</th>
                 <th className="px-6 py-3 text-left">Punti</th>
               </tr>
             </thead>
