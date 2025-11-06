@@ -558,3 +558,202 @@ export default function SimRacingApp() {
                 </button>
                 {editing && (
                   <button onClick={handleCancel} className="px-6 py-2 bg-gray-500 text-white rounde
+                    d-lg">
+                    Annulla
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <table className="w-full">
+              <thead style={{ backgroundColor: theme.secondary }}>
+                <tr className="text-white">
+                  <th className="px-6 py-3 text-left">Gara</th>
+                  <th className="px-6 py-3 text-left">Pilota</th>
+                  <th className="px-6 py-3 text-left">Posizione</th>
+                  <th className="px-6 py-3 text-left">Punti</th>
+                  {canEdit && <th className="px-6 py-3 text-left">Azioni</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {results.map((r, i) => {
+                  const race = races.find(x => x.id === r.race_id);
+                  const driver = drivers.find(x => x.id === r.driver_id);
+                  return (
+                    <tr key={r.id} className={i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                      <td className="px-6 py-4">{race?.name || 'N/A'}</td>
+                      <td className="px-6 py-4 font-semibold">{driver?.name || 'N/A'}</td>
+                      <td className="px-6 py-4">{r.position}</td>
+                      <td className="px-6 py-4 font-bold">{r.points}</td>
+                      {canEdit && (
+                        <td className="px-6 py-4">
+                          <div className="flex gap-2">
+                            <button onClick={() => handleEdit(r)} className="text-blue-500">
+                              <Edit className="w-5 h-5" />
+                            </button>
+                            {isAdmin && (
+                              <button onClick={() => handleDelete(r.id)} className="text-red-500">
+                                <Trash2 className="w-5 h-5" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+
+    function StandingsContent() {
+      const points = {};
+      results.forEach(r => {
+        const dId = r.driver_id;
+        points[dId] = (points[dId] || 0) + parseInt(r.points || 0);
+      });
+
+      const standings = drivers.map(d => ({ ...d, points: points[d.id] || 0 })).sort((a, b) => b.points - a.points);
+
+      return (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="p-6" style={{ backgroundColor: theme.primary }}>
+            <h2 className="text-2xl font-bold text-white flex items-center"><Award className="w-8 h-8 mr-3" />Classifica Piloti</h2>
+          </div>
+          <table className="w-full">
+            <thead style={{ backgroundColor: theme.secondary }}>
+              <tr className="text-white">
+                <th className="px-6 py-3 text-left">Posizione</th>
+                <th className="px-6 py-3 text-left">Numero</th>
+                <th className="px-6 py-3 text-left">Pilota</th>
+                <th className="px-6 py-3 text-left">Team</th>
+                <th className="px-6 py-3 text-left">Punti</th>
+              </tr>
+            </thead>
+            <tbody>
+              {standings.map((d, i) => (
+                <tr key={d.id} className={i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                  <td className="px-6 py-4 font-bold" style={{ color: i < 3 ? theme.primary : 'inherit' }}>{i + 1}</td>
+                  <td className="px-6 py-4">{d.number}</td>
+                  <td className="px-6 py-4 font-semibold">{d.name}</td>
+                  <td className="px-6 py-4">{d.team}</td>
+                  <td className="px-6 py-4 font-bold text-lg">{d.points}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+
+    function ThemeContent() {
+      const [local, setLocal] = useState(theme);
+
+      const presets = [
+        { name: 'Racing Red', primary: '#ef4444', secondary: '#1f2937', background: '#111827' },
+        { name: 'Ferrari', primary: '#dc2626', secondary: '#450a0a', background: '#7f1d1d' },
+        { name: 'Mercedes', primary: '#6b7280', secondary: '#1f2937', background: '#111827' },
+        { name: 'McLaren', primary: '#f97316', secondary: '#1c1917', background: '#292524' },
+        { name: 'Red Bull', primary: '#3b82f6', secondary: '#1e293b', background: '#0f172a' }
+      ];
+
+      const applyPreset = (preset) => {
+        setLocal({
+          ...local,
+          primary: preset.primary,
+          secondary: preset.secondary,
+          background: preset.background
+        });
+      };
+
+      return (
+        <div className="space-y-6">
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-xl font-bold mb-6" style={{ color: local.primary }}>Personalizza App</h3>
+            
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium mb-2">Titolo Applicazione</label>
+                <input 
+                  type="text" 
+                  value={local.appTitle} 
+                  onChange={(e) => setLocal({ ...local, appTitle: e.target.value })} 
+                  className="w-full px-4 py-2 border rounded-lg"
+                  placeholder="Es: Sim Racing Manager"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">URL Logo (immagine)</label>
+                <input 
+                  type="text" 
+                  value={local.appLogoUrl || ''} 
+                  onChange={(e) => setLocal({ ...local, appLogoUrl: e.target.value || null })} 
+                  className="w-full px-4 py-2 border rounded-lg"
+                  placeholder="Es: https://i.imgur.com/tuaimmagine.png"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Carica la tua immagine su <a href="https://imgur.com/upload" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">Imgur</a> o <a href="https://imgbb.com/" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">ImgBB</a> e incolla qui l'URL diretto
+                </p>
+                {local.appLogoUrl && (
+                  <div className="mt-2">
+                    <p className="text-xs font-medium mb-1">Anteprima logo:</p>
+                    <img src={local.appLogoUrl} alt="Logo preview" className="w-16 h-16 object-contain border rounded" />
+                  </div>
+                )}
+              </div>
+
+              <hr className="my-6" />
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Colore Primario</label>
+                <div className="flex gap-4">
+                  <input type="color" value={local.primary} onChange={(e) => setLocal({ ...local, primary: e.target.value })} className="w-20 h-10 rounded cursor-pointer" />
+                  <input type="text" value={local.primary} onChange={(e) => setLocal({ ...local, primary: e.target.value })} className="flex-1 px-4 py-2 border rounded-lg" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Colore Secondario</label>
+                <div className="flex gap-4">
+                  <input type="color" value={local.secondary} onChange={(e) => setLocal({ ...local, secondary: e.target.value })} className="w-20 h-10 rounded cursor-pointer" />
+                  <input type="text" value={local.secondary} onChange={(e) => setLocal({ ...local, secondary: e.target.value })} className="flex-1 px-4 py-2 border rounded-lg" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Colore Sfondo</label>
+                <div className="flex gap-4">
+                  <input type="color" value={local.background} onChange={(e) => setLocal({ ...local, background: e.target.value })} className="w-20 h-10 rounded cursor-pointer" />
+                  <input type="text" value={local.background} onChange={(e) => setLocal({ ...local, background: e.target.value })} className="flex-1 px-4 py-2 border rounded-lg" />
+                </div>
+              </div>
+            </div>
+            
+            <button onClick={() => saveThemeData(local)} className="mt-6 px-6 py-2 text-white rounded-lg" style={{ backgroundColor: local.primary }}>
+              Applica Personalizzazione
+            </button>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-xl font-bold mb-4">Temi Predefiniti (solo colori)</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {presets.map((p, idx) => (
+                <button key={idx} onClick={() => applyPreset(p)} className="p-4 border-2 rounded-lg text-left hover:shadow-lg transition" style={{ borderColor: p.primary }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 rounded" style={{ backgroundColor: p.primary }}></div>
+                    <div className="w-8 h-8 rounded" style={{ backgroundColor: p.secondary }}></div>
+                    <div className="w-8 h-8 rounded" style={{ backgroundColor: p.background }}></div>
+                  </div>
+                  <p className="font-bold">{p.name}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+  }
+}
