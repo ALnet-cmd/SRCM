@@ -426,115 +426,174 @@ export default function SimRacingApp() {
     }
 
     function ResultsContent({ canEdit, isAdmin }) {
-      const [form, setForm] = useState({ race_id: '', driver_id: '', position: '', points: '' });
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState({ race_id: '', driver_id: '', position: '', points: '' });
 
-      const handleAdd = async () => {
-  if (!form.race_id || !form.driver_id) {
-    alert('Seleziona gara e pilota');
-    return;
-  }
-  
-  // Controlla se esiste già un risultato per questa posizione in questa gara
-  const duplicatePosition = results.find(
-    r => r.race_id === parseInt(form.race_id) && r.position === form.position
-  );
-  
-  if (duplicatePosition) {
-    const driver = drivers.find(d => d.id === duplicatePosition.driver_id);
-    alert(`La posizione ${form.position} è già occupata da ${driver?.name || 'un altro pilota'} in questa gara!`);
-    return;
-  }
-  
-  // Controlla se il pilota ha già un risultato in questa gara
-  const duplicateDriver = results.find(
-    r => r.race_id === parseInt(form.race_id) && r.driver_id === parseInt(form.driver_id)
-  );
-  
-  if (duplicateDriver) {
-    alert('Questo pilota ha già un risultato in questa gara!');
-    return;
-  }
-  
-  try {
-    const { data, error } = await supabase.from('results').insert(form).select().single();
-          if (error) throw error;
-          setResults([...results, data]);
-          setForm({ race_id: '', driver_id: '', position: '', points: '' });
-          alert('Salvato!');
-        } catch (error) {
-          console.error('Error:', error);
-          alert('Errore nel salvataggio');
-        }
-      };
+  const handleAdd = async () => {
+    if (!form.race_id || !form.driver_id) {
+      alert('Seleziona gara e pilota');
+      return;
+    }
+    
+    // Controlla se esiste già un risultato per questa posizione in questa gara (escludi quello in modifica)
+    const duplicatePosition = results.find(
+      r => r.race_id === parseInt(form.race_id) && 
+           r.position === form.position && 
+           r.id !== editing
+    );
+    
+    if (duplicatePosition) {
+      const driver = drivers.find(d => d.id === duplicatePosition.driver_id);
+      alert(`La posizione ${form.position} è già occupata da ${driver?.name || 'un altro pilota'} in questa gara!`);
+      return;
+    }
+    
+    // Controlla se il pilota ha già un risultato in questa gara (escludi quello in modifica)
+    const duplicateDriver = results.find(
+      r => r.race_id === parseInt(form.race_id) && 
+           r.driver_id === parseInt(form.driver_id) && 
+           r.id !== editing
+    );
+    
+    if (duplicateDriver) {
+      alert('Questo pilota ha già un risultato in questa gara!');
+      return;
+    }
+    
+    try {
+      if (editing) {
+        // Modalità modifica
+        const { error } = await supabase
+          .from('results')
+          .update({
+            race_id: form.race_id,
+            driver_id: form.driver_id,
+            position: form.position,
+            points: form.points
+          })
+          .eq('id', editing);
+        
+        if (error) throw error;
+        setResults(results.map(r => r.id === editing ? { ...r, ...form, race_id: parseInt(form.race_id), driver_id: parseInt(form.driver_id) } : r));
+        alert('Risultato aggiornato!');
+      } else {
+        // Modalità inserimento
+        const { data, error } = await supabase.from('results').insert(form).select().single();
+        if (error) throw error;
+        setResults([...results, data]);
+        alert('Salvato!');
+      }
+      setEditing(null);
+      setForm({ race_id: '', driver_id: '', position: '', points: '' });
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Errore nel salvataggio');
+    }
+  };
 
-      const handleDelete = async (id) => {
-        if (!window.confirm('Eliminare questo risultato?')) return;
-        try {
-          const { error } = await supabase.from('results').delete().eq('id', id);
-          if (error) throw error;
-          setResults(results.filter(r => r.id !== id));
-          alert('Eliminato!');
-        } catch (error) {
-          console.error('Error:', error);
-          alert('Errore eliminazione');
-        }
-      };
+  const handleEdit = (result) => {
+    setEditing(result.id);
+    setForm({
+      race_id: result.race_id.toString(),
+      driver_id: result.driver_id.toString(),
+      position: result.position,
+      points: result.points
+    });
+  };
 
-      return (
-        <div className="space-y-6">
-          {canEdit && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-xl font-bold mb-4" style={{ color: theme.primary }}>Inserisci Risultato</h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <select value={form.race_id} onChange={(e) => setForm({ ...form, race_id: e.target.value })} className="px-4 py-2 border rounded-lg">
-                  <option value="">Seleziona Gara</option>
-                  {races.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-                </select>
-                <select value={form.driver_id} onChange={(e) => setForm({ ...form, driver_id: e.target.value })} className="px-4 py-2 border rounded-lg">
-                  <option value="">Seleziona Pilota</option>
-                  {drivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                </select>
-                <input type="number" placeholder="Posizione" value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} className="px-4 py-2 border rounded-lg" />
-                <input type="number" placeholder="Punti" value={form.points} onChange={(e) => setForm({ ...form, points: e.target.value })} className="px-4 py-2 border rounded-lg" />
-              </div>
-              <button onClick={handleAdd} className="mt-4 px-6 py-2 text-white rounded-lg" style={{ backgroundColor: theme.primary }}>Aggiungi</button>
-            </div>
-          )}
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <table className="w-full">
-              <thead style={{ backgroundColor: theme.secondary }}>
-                <tr className="text-white">
-                  <th className="px-6 py-3 text-left">Gara</th>
-                  <th className="px-6 py-3 text-left">Pilota</th>
-                  <th className="px-6 py-3 text-left">Posizione</th>
-                  <th className="px-6 py-3 text-left">Punti</th>
-                  {canEdit && <th className="px-6 py-3 text-left">Azioni</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {results.map((r, i) => {
-                  const race = races.find(x => x.id === r.race_id);
-                  const driver = drivers.find(x => x.id === r.driver_id);
-                  return (
-                    <tr key={r.id} className={i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
-                      <td className="px-6 py-4">{race?.name || 'N/A'}</td>
-                      <td className="px-6 py-4 font-semibold">{driver?.name || 'N/A'}</td>
-                      <td className="px-6 py-4">{r.position}</td>
-                      <td className="px-6 py-4 font-bold">{r.points}</td>
-                      {canEdit && (
-                        <td className="px-6 py-4">
-                          {isAdmin && <button onClick={() => handleDelete(r.id)} className="text-red-500"><Trash2 className="w-5 h-5" /></button>}
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+  const handleCancel = () => {
+    setEditing(null);
+    setForm({ race_id: '', driver_id: '', position: '', points: '' });
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Eliminare questo risultato?')) return;
+    try {
+      const { error } = await supabase.from('results').delete().eq('id', id);
+      if (error) throw error;
+      setResults(results.filter(r => r.id !== id));
+      alert('Eliminato!');
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Errore eliminazione');
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {canEdit && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-xl font-bold mb-4" style={{ color: theme.primary }}>
+            {editing ? 'Modifica Risultato' : 'Inserisci Risultato'}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <select value={form.race_id} onChange={(e) => setForm({ ...form, race_id: e.target.value })} className="px-4 py-2 border rounded-lg">
+              <option value="">Seleziona Gara</option>
+              {races.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+            </select>
+            <select value={form.driver_id} onChange={(e) => setForm({ ...form, driver_id: e.target.value })} className="px-4 py-2 border rounded-lg">
+              <option value="">Seleziona Pilota</option>
+              {drivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+            </select>
+            <input type="number" placeholder="Posizione" value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} className="px-4 py-2 border rounded-lg" />
+            <input type="number" placeholder="Punti" value={form.points} onChange={(e) => setForm({ ...form, points: e.target.value })} className="px-4 py-2 border rounded-lg" />
+          </div>
+          <div className="flex gap-2 mt-4">
+            <button onClick={handleAdd} className="px-6 py-2 text-white rounded-lg" style={{ backgroundColor: theme.primary }}>
+              {editing ? 'Aggiorna' : 'Aggiungi'}
+            </button>
+            {editing && (
+              <button onClick={handleCancel} className="px-6 py-2 bg-gray-500 text-white rounded-lg">
+                Annulla
+              </button>
+            )}
           </div>
         </div>
-      );
-    }
+      )}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <table className="w-full">
+          <thead style={{ backgroundColor: theme.secondary }}>
+            <tr className="text-white">
+              <th className="px-6 py-3 text-left">Gara</th>
+              <th className="px-6 py-3 text-left">Pilota</th>
+              <th className="px-6 py-3 text-left">Posizione</th>
+              <th className="px-6 py-3 text-left">Punti</th>
+              {canEdit && <th className="px-6 py-3 text-left">Azioni</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {results.map((r, i) => {
+              const race = races.find(x => x.id === r.race_id);
+              const driver = drivers.find(x => x.id === r.driver_id);
+              return (
+                <tr key={r.id} className={i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                  <td className="px-6 py-4">{race?.name || 'N/A'}</td>
+                  <td className="px-6 py-4 font-semibold">{driver?.name || 'N/A'}</td>
+                  <td className="px-6 py-4">{r.position}</td>
+                  <td className="px-6 py-4 font-bold">{r.points}</td>
+                  {canEdit && (
+                    <td className="px-6 py-4">
+                      <div className="flex gap-2">
+                        <button onClick={() => handleEdit(r)} className="text-blue-500">
+                          <Edit className="w-5 h-5" />
+                        </button>
+                        {isAdmin && (
+                          <button onClick={() => handleDelete(r.id)} className="text-red-500">
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 
     function StandingsContent() {
       const points = {};
