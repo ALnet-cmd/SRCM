@@ -33,12 +33,14 @@ export default function SimRacingApp() {
         .single();
       
       if (themeData) {
-        setTheme({
-          primary: themeData.primary_color,
-          secondary: themeData.secondary_color,
-          background: themeData.background_color
-        });
-      }
+  setTheme({
+    primary: themeData.primary_color,
+    secondary: themeData.secondary_color,
+    background: themeData.background_color,
+    appTitle: themeData.app_title || 'Sim Racing Manager',
+    appLogoUrl: themeData.app_logo_url || null
+  });
+}
 
       const { data: champsData } = await supabase.from('championships').select('*').order('created_at', { ascending: false });
       if (champsData) setChampionships(champsData);
