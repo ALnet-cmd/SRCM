@@ -4,7 +4,13 @@ import { supabase } from './supabaseClient';
 
 export default function SimRacingApp() {
   const [user, setUser] = useState(null);
-  const [theme, setTheme] = useState({ primary: '#ef4444', secondary: '#1f2937', background: '#111827' });
+  const [theme, setTheme] = useState({ 
+  primary: '#ef4444', 
+  secondary: '#1f2937', 
+  background: '#111827',
+  appTitle: 'Sim Racing Manager',
+  appLogoUrl: null
+});
   const [championships, setChampionships] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [races, setRaces] = useState([]);
