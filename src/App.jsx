@@ -429,12 +429,34 @@ export default function SimRacingApp() {
       const [form, setForm] = useState({ race_id: '', driver_id: '', position: '', points: '' });
 
       const handleAdd = async () => {
-        if (!form.race_id || !form.driver_id) {
-          alert('Seleziona gara e pilota');
-          return;
-        }
-        try {
-          const { data, error } = await supabase.from('results').insert(form).select().single();
+  if (!form.race_id || !form.driver_id) {
+    alert('Seleziona gara e pilota');
+    return;
+  }
+  
+  // Controlla se esiste già un risultato per questa posizione in questa gara
+  const duplicatePosition = results.find(
+    r => r.race_id === parseInt(form.race_id) && r.position === form.position
+  );
+  
+  if (duplicatePosition) {
+    const driver = drivers.find(d => d.id === duplicatePosition.driver_id);
+    alert(`La posizione ${form.position} è già occupata da ${driver?.name || 'un altro pilota'} in questa gara!`);
+    return;
+  }
+  
+  // Controlla se il pilota ha già un risultato in questa gara
+  const duplicateDriver = results.find(
+    r => r.race_id === parseInt(form.race_id) && r.driver_id === parseInt(form.driver_id)
+  );
+  
+  if (duplicateDriver) {
+    alert('Questo pilota ha già un risultato in questa gara!');
+    return;
+  }
+  
+  try {
+    const { data, error } = await supabase.from('results').insert(form).select().single();
           if (error) throw error;
           setResults([...results, data]);
           setForm({ race_id: '', driver_id: '', position: '', points: '' });
