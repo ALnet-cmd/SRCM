@@ -61,12 +61,14 @@ export default function SimRacingApp() {
   };
 
   const saveThemeData = async (newTheme) => {
-    try {
-      const { error } = await supabase.from('themes').insert({
-        primary_color: newTheme.primary,
-        secondary_color: newTheme.secondary,
-        background_color: newTheme.background
-      });
+  try {
+    const { error } = await supabase.from('themes').insert({
+      primary_color: newTheme.primary,
+      secondary_color: newTheme.secondary,
+      background_color: newTheme.background,
+      app_title: newTheme.appTitle,
+      app_logo_url: newTheme.appLogoUrl
+    });
 
       if (error) throw error;
       setTheme(newTheme);
