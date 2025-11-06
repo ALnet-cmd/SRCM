@@ -112,12 +112,14 @@ export default function SimRacingApp() {
     };
 
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: `linear-gradient(135deg, ${theme.background} 0%, ${theme.secondary} 100%)` }}>
-        <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">
-          <div className="flex items-center justify-center mb-8">
-            <Trophy className="w-12 h-12 mr-3" style={{ color: theme.primary }} />
-            <h1 className="text-3xl font-bold text-gray-800">Sim Racing</h1>
-          </div>
+      <div className="flex items-center justify-center mb-8">
+  {theme.appLogoUrl ? (
+    <img src={theme.appLogoUrl} alt="Logo" className="w-12 h-12 mr-3 object-contain" />
+  ) : (
+    <Trophy className="w-12 h-12 mr-3" style={{ color: theme.primary }} />
+  )}
+  <h1 className="text-3xl font-bold text-gray-800">{theme.appTitle}</h1>
+</div>
           <div className="space-y-4">
             <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full px-4 py-3 border rounded-lg" />
             <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleLogin()} className="w-full px-4 py-3 border rounded-lg" />
