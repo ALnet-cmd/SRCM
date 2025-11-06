@@ -5,12 +5,12 @@ import { supabase } from './supabaseClient';
 export default function SimRacingApp() {
   const [user, setUser] = useState(null);
   const [theme, setTheme] = useState({ 
-  primary: '#ef4444', 
-  secondary: '#1f2937', 
-  background: '#111827',
-  appTitle: 'Sim Racing Manager',
-  appLogoUrl: null
-});
+    primary: '#ef4444', 
+    secondary: '#1f2937', 
+    background: '#111827',
+    appTitle: 'Sim Racing Manager',
+    appLogoUrl: null
+  });
   const [championships, setChampionships] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [races, setRaces] = useState([]);
@@ -33,14 +33,14 @@ export default function SimRacingApp() {
         .single();
       
       if (themeData) {
-  setTheme({
-    primary: themeData.primary_color,
-    secondary: themeData.secondary_color,
-    background: themeData.background_color,
-    appTitle: themeData.app_title || 'Sim Racing Manager',
-    appLogoUrl: themeData.app_logo_url || null
-  });
-}
+        setTheme({
+          primary: themeData.primary_color,
+          secondary: themeData.secondary_color,
+          background: themeData.background_color,
+          appTitle: themeData.app_title || 'Sim Racing Manager',
+          appLogoUrl: themeData.app_logo_url || null
+        });
+      }
 
       const { data: champsData } = await supabase.from('championships').select('*').order('created_at', { ascending: false });
       if (champsData) setChampionships(champsData);
@@ -61,14 +61,14 @@ export default function SimRacingApp() {
   };
 
   const saveThemeData = async (newTheme) => {
-  try {
-    const { error } = await supabase.from('themes').insert({
-      primary_color: newTheme.primary,
-      secondary_color: newTheme.secondary,
-      background_color: newTheme.background,
-      app_title: newTheme.appTitle,
-      app_logo_url: newTheme.appLogoUrl
-    });
+    try {
+      const { error } = await supabase.from('themes').insert({
+        primary_color: newTheme.primary,
+        secondary_color: newTheme.secondary,
+        background_color: newTheme.background,
+        app_title: newTheme.appTitle,
+        app_logo_url: newTheme.appLogoUrl
+      });
 
       if (error) throw error;
       setTheme(newTheme);
@@ -112,14 +112,16 @@ export default function SimRacingApp() {
     };
 
     return (
-      <div className="flex items-center justify-center mb-8">
-  {theme.appLogoUrl ? (
-    <img src={theme.appLogoUrl} alt="Logo" className="w-12 h-12 mr-3 object-contain" />
-  ) : (
-    <Trophy className="w-12 h-12 mr-3" style={{ color: theme.primary }} />
-  )}
-  <h1 className="text-3xl font-bold text-gray-800">{theme.appTitle}</h1>
-</div>
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: `linear-gradient(135deg, ${theme.background} 0%, ${theme.secondary} 100%)` }}>
+        <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">
+          <div className="flex items-center justify-center mb-8">
+            {theme.appLogoUrl ? (
+              <img src={theme.appLogoUrl} alt="Logo" className="w-12 h-12 mr-3 object-contain" />
+            ) : (
+              <Trophy className="w-12 h-12 mr-3" style={{ color: theme.primary }} />
+            )}
+            <h1 className="text-3xl font-bold text-gray-800">{theme.appTitle}</h1>
+          </div>
           <div className="space-y-4">
             <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full px-4 py-3 border rounded-lg" />
             <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleLogin()} className="w-full px-4 py-3 border rounded-lg" />
@@ -146,8 +148,12 @@ export default function SimRacingApp() {
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center">
-                <Trophy className="w-8 h-8 text-white mr-3" />
-                <span className="text-white text-xl font-bold">Sim Racing Manager</span>
+                {theme.appLogoUrl ? (
+                  <img src={theme.appLogoUrl} alt="Logo" className="w-8 h-8 mr-3 object-contain" />
+                ) : (
+                  <Trophy className="w-8 h-8 text-white mr-3" />
+                )}
+                <span className="text-white text-xl font-bold">{theme.appTitle}</span>
               </div>
               <div className="flex items-center gap-4">
                 <span className="text-white">{user.name}</span>
@@ -438,274 +444,117 @@ export default function SimRacingApp() {
     }
 
     function ResultsContent({ canEdit, isAdmin }) {
-  const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ race_id: '', driver_id: '', position: '', points: '' });
+      const [editing, setEditing] = useState(null);
+      const [form, setForm] = useState({ race_id: '', driver_id: '', position: '', points: '' });
 
-  const handleAdd = async () => {
-    if (!form.race_id || !form.driver_id) {
-      alert('Seleziona gara e pilota');
-      return;
-    }
-    
-    // Controlla se esiste già un risultato per questa posizione in questa gara (escludi quello in modifica)
-    const duplicatePosition = results.find(
-      r => r.race_id === parseInt(form.race_id) && 
-           r.position === form.position && 
-           r.id !== editing
-    );
-    
-    if (duplicatePosition) {
-      const driver = drivers.find(d => d.id === duplicatePosition.driver_id);
-      alert(`La posizione ${form.position} è già occupata da ${driver?.name || 'un altro pilota'} in questa gara!`);
-      return;
-    }
-    
-    // Controlla se il pilota ha già un risultato in questa gara (escludi quello in modifica)
-    const duplicateDriver = results.find(
-      r => r.race_id === parseInt(form.race_id) && 
-           r.driver_id === parseInt(form.driver_id) && 
-           r.id !== editing
-    );
-    
-    if (duplicateDriver) {
-      alert('Questo pilota ha già un risultato in questa gara!');
-      return;
-    }
-    
-    try {
-      if (editing) {
-        // Modalità modifica
-        const { error } = await supabase
-          .from('results')
-          .update({
-            race_id: form.race_id,
-            driver_id: form.driver_id,
-            position: form.position,
-            points: form.points
-          })
-          .eq('id', editing);
+      const handleAdd = async () => {
+        if (!form.race_id || !form.driver_id) {
+          alert('Seleziona gara e pilota');
+          return;
+        }
         
-        if (error) throw error;
-        setResults(results.map(r => r.id === editing ? { ...r, ...form, race_id: parseInt(form.race_id), driver_id: parseInt(form.driver_id) } : r));
-        alert('Risultato aggiornato!');
-      } else {
-        // Modalità inserimento
-        const { data, error } = await supabase.from('results').insert(form).select().single();
-        if (error) throw error;
-        setResults([...results, data]);
-        alert('Salvato!');
-      }
-      setEditing(null);
-      setForm({ race_id: '', driver_id: '', position: '', points: '' });
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Errore nel salvataggio');
-    }
-  };
+        const duplicatePosition = results.find(
+          r => r.race_id === parseInt(form.race_id) && 
+               r.position === form.position && 
+               r.id !== editing
+        );
+        
+        if (duplicatePosition) {
+          const driver = drivers.find(d => d.id === duplicatePosition.driver_id);
+          alert(`La posizione ${form.position} è già occupata da ${driver?.name || 'un altro pilota'} in questa gara!`);
+          return;
+        }
+        
+        const duplicateDriver = results.find(
+          r => r.race_id === parseInt(form.race_id) && 
+               r.driver_id === parseInt(form.driver_id) && 
+               r.id !== editing
+        );
+        
+        if (duplicateDriver) {
+          alert('Questo pilota ha già un risultato in questa gara!');
+          return;
+        }
+        
+        try {
+          if (editing) {
+            const { error } = await supabase
+              .from('results')
+              .update({
+                race_id: form.race_id,
+                driver_id: form.driver_id,
+                position: form.position,
+                points: form.points
+              })
+              .eq('id', editing);
+            
+            if (error) throw error;
+            setResults(results.map(r => r.id === editing ? { ...r, ...form, race_id: parseInt(form.race_id), driver_id: parseInt(form.driver_id) } : r));
+            alert('Risultato aggiornato!');
+          } else {
+            const { data, error } = await supabase.from('results').insert(form).select().single();
+            if (error) throw error;
+            setResults([...results, data]);
+            alert('Salvato!');
+          }
+          setEditing(null);
+          setForm({ race_id: '', driver_id: '', position: '', points: '' });
+        } catch (error) {
+          console.error('Error:', error);
+          alert('Errore nel salvataggio');
+        }
+      };
 
-  const handleEdit = (result) => {
-    setEditing(result.id);
-    setForm({
-      race_id: result.race_id.toString(),
-      driver_id: result.driver_id.toString(),
-      position: result.position,
-      points: result.points
-    });
-  };
+      const handleEdit = (result) => {
+        setEditing(result.id);
+        setForm({
+          race_id: result.race_id.toString(),
+          driver_id: result.driver_id.toString(),
+          position: result.position,
+          points: result.points
+        });
+      };
 
-  const handleCancel = () => {
-    setEditing(null);
-    setForm({ race_id: '', driver_id: '', position: '', points: '' });
-  };
+      const handleCancel = () => {
+        setEditing(null);
+        setForm({ race_id: '', driver_id: '', position: '', points: '' });
+      };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Eliminare questo risultato?')) return;
-    try {
-      const { error } = await supabase.from('results').delete().eq('id', id);
-      if (error) throw error;
-      setResults(results.filter(r => r.id !== id));
-      alert('Eliminato!');
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Errore eliminazione');
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      {canEdit && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-xl font-bold mb-4" style={{ color: theme.primary }}>
-            {editing ? 'Modifica Risultato' : 'Inserisci Risultato'}
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <select value={form.race_id} onChange={(e) => setForm({ ...form, race_id: e.target.value })} className="px-4 py-2 border rounded-lg">
-              <option value="">Seleziona Gara</option>
-              {races.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-            </select>
-            <select value={form.driver_id} onChange={(e) => setForm({ ...form, driver_id: e.target.value })} className="px-4 py-2 border rounded-lg">
-              <option value="">Seleziona Pilota</option>
-              {drivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-            </select>
-            <input type="number" placeholder="Posizione" value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} className="px-4 py-2 border rounded-lg" />
-            <input type="number" placeholder="Punti" value={form.points} onChange={(e) => setForm({ ...form, points: e.target.value })} className="px-4 py-2 border rounded-lg" />
-          </div>
-          <div className="flex gap-2 mt-4">
-            <button onClick={handleAdd} className="px-6 py-2 text-white rounded-lg" style={{ backgroundColor: theme.primary }}>
-              {editing ? 'Aggiorna' : 'Aggiungi'}
-            </button>
-            {editing && (
-              <button onClick={handleCancel} className="px-6 py-2 bg-gray-500 text-white rounded-lg">
-                Annulla
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full">
-          <thead style={{ backgroundColor: theme.secondary }}>
-            <tr className="text-white">
-              <th className="px-6 py-3 text-left">Gara</th>
-              <th className="px-6 py-3 text-left">Pilota</th>
-              <th className="px-6 py-3 text-left">Posizione</th>
-              <th className="px-6 py-3 text-left">Punti</th>
-              {canEdit && <th className="px-6 py-3 text-left">Azioni</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {results.map((r, i) => {
-              const race = races.find(x => x.id === r.race_id);
-              const driver = drivers.find(x => x.id === r.driver_id);
-              return (
-                <tr key={r.id} className={i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
-                  <td className="px-6 py-4">{race?.name || 'N/A'}</td>
-                  <td className="px-6 py-4 font-semibold">{driver?.name || 'N/A'}</td>
-                  <td className="px-6 py-4">{r.position}</td>
-                  <td className="px-6 py-4 font-bold">{r.points}</td>
-                  {canEdit && (
-                    <td className="px-6 py-4">
-                      <div className="flex gap-2">
-                        <button onClick={() => handleEdit(r)} className="text-blue-500">
-                          <Edit className="w-5 h-5" />
-                        </button>
-                        {isAdmin && (
-                          <button onClick={() => handleDelete(r.id)} className="text-red-500">
-                            <Trash2 className="w-5 h-5" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  )}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-    function StandingsContent() {
-      const points = {};
-      results.forEach(r => {
-        const dId = r.driver_id;
-        points[dId] = (points[dId] || 0) + parseInt(r.points || 0);
-      });
-
-      const standings = drivers.map(d => ({ ...d, points: points[d.id] || 0 })).sort((a, b) => b.points - a.points);
-
-      return (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="p-6" style={{ backgroundColor: theme.primary }}>
-            <h2 className="text-2xl font-bold text-white flex items-center"><Award className="w-8 h-8 mr-3
-              " />Classifica Piloti</h2>
-          </div>
-          <table className="w-full">
-            <thead style={{ backgroundColor: theme.secondary }}>
-              <tr className="text-white">
-                <th className="px-6 py-3 text-left">Posizione</th>
-                <th className="px-6 py-3 text-left">Numero</th>
-                <th className="px-6 py-3 text-left">Pilota</th>
-                <th className="px-6 py-3 text-left">Team</th>
-                <th className="px-6 py-3 text-left">Punti</th>
-              </tr>
-            </thead>
-            <tbody>
-              {standings.map((d, i) => (
-                <tr key={d.id} className={i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
-                  <td className="px-6 py-4 font-bold" style={{ color: i < 3 ? theme.primary : 'inherit' }}>{i + 1}</td>
-                  <td className="px-6 py-4">{d.number}</td>
-                  <td className="px-6 py-4 font-semibold">{d.name}</td>
-                  <td className="px-6 py-4">{d.team}</td>
-                  <td className="px-6 py-4 font-bold text-lg">{d.points}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      );
-    }
-
-    function ThemeContent() {
-      const [local, setLocal] = useState(theme);
-
-      const presets = [
-        { name: 'Racing Red', primary: '#ef4444', secondary: '#1f2937', background: '#111827' },
-        { name: 'Ferrari', primary: '#dc2626', secondary: '#450a0a', background: '#7f1d1d' },
-        { name: 'Mercedes', primary: '#6b7280', secondary: '#1f2937', background: '#111827' },
-        { name: 'McLaren', primary: '#f97316', secondary: '#1c1917', background: '#292524' },
-        { name: 'Red Bull', primary: '#3b82f6', secondary: '#1e293b', background: '#0f172a' }
-      ];
+      const handleDelete = async (id) => {
+        if (!window.confirm('Eliminare questo risultato?')) return;
+        try {
+          const { error } = await supabase.from('results').delete().eq('id', id);
+          if (error) throw error;
+          setResults(results.filter(r => r.id !== id));
+          alert('Eliminato!');
+        } catch (error) {
+          console.error('Error:', error);
+          alert('Errore eliminazione');
+        }
+      };
 
       return (
         <div className="space-y-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-xl font-bold mb-4" style={{ color: local.primary }}>Personalizza Tema</h3>
-            <div className="space-y-4 mb-6">
-              <div>
-                <label className="block text-sm font-medium mb-2">Colore Primario</label>
-                <div className="flex gap-4">
-                  <input type="color" value={local.primary} onChange={(e) => setLocal({ ...local, primary: e.target.value })} className="w-20 h-10 rounded cursor-pointer" />
-                  <input type="text" value={local.primary} onChange={(e) => setLocal({ ...local, primary: e.target.value })} className="flex-1 px-4 py-2 border rounded-lg" />
-                </div>
+          {canEdit && (
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-xl font-bold mb-4" style={{ color: theme.primary }}>
+                {editing ? 'Modifica Risultato' : 'Inserisci Risultato'}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <select value={form.race_id} onChange={(e) => setForm({ ...form, race_id: e.target.value })} className="px-4 py-2 border rounded-lg">
+                  <option value="">Seleziona Gara</option>
+                  {races.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                </select>
+                <select value={form.driver_id} onChange={(e) => setForm({ ...form, driver_id: e.target.value })} className="px-4 py-2 border rounded-lg">
+                  <option value="">Seleziona Pilota</option>
+                  {drivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                </select>
+                <input type="number" placeholder="Posizione" value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} className="px-4 py-2 border rounded-lg" />
+                <input type="number" placeholder="Punti" value={form.points} onChange={(e) => setForm({ ...form, points: e.target.value })} className="px-4 py-2 border rounded-lg" />
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Colore Secondario</label>
-                <div className="flex gap-4">
-                  <input type="color" value={local.secondary} onChange={(e) => setLocal({ ...local, secondary: e.target.value })} className="w-20 h-10 rounded cursor-pointer" />
-                  <input type="text" value={local.secondary} onChange={(e) => setLocal({ ...local, secondary: e.target.value })} className="flex-1 px-4 py-2 border rounded-lg" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Colore Sfondo</label>
-                <div className="flex gap-4">
-                  <input type="color" value={local.background} onChange={(e) => setLocal({ ...local, background: e.target.value })} className="w-20 h-10 rounded cursor-pointer" />
-                  <input type="text" value={local.background} onChange={(e) => setLocal({ ...local, background: e.target.value })} className="flex-1 px-4 py-2 border rounded-lg" />
-                </div>
-              </div>
-            </div>
-            <button onClick={() => saveThemeData(local)} className="px-6 py-2 text-white rounded-lg" style={{ backgroundColor: local.primary }}>Applica Tema</button>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-xl font-bold mb-4">Temi Predefiniti</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {presets.map((p, idx) => (
-                <button key={idx} onClick={() => setLocal(p)} className="p-4 border-2 rounded-lg text-left hover:shadow-lg transition" style={{ borderColor: p.primary }}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded" style={{ backgroundColor: p.primary }}></div>
-                    <div className="w-8 h-8 rounded" style={{ backgroundColor: p.secondary }}></div>
-                    <div className="w-8 h-8 rounded" style={{ backgroundColor: p.background }}></div>
-                  </div>
-                  <p className="font-bold">{p.name}</p>
+              <div className="flex gap-2 mt-4">
+                <button onClick={handleAdd} className="px-6 py-2 text-white rounded-lg" style={{ backgroundColor: theme.primary }}>
+                  {editing ? 'Aggiorna' : 'Aggiungi'}
                 </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      );
-    }
-  }
-}
+                {editing && (
+                  <button onClick={handleCancel} className="px-6 py-2 bg-gray-500 text-white rounde
