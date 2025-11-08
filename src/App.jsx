@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Users, Flag, LogOut, Edit, Trash2, Save, Calendar, Award, Palette } from 'lucide-react';
+import { Trophy, Users, Flag, LogOut, Edit, Trash2, Save, Calendar, Award, Palette, ArrowLeft } from 'lucide-react';
 import { supabase } from './supabaseClient';
 
 export default function SimRacingApp() {
@@ -12,15 +12,22 @@ export default function SimRacingApp() {
     appLogoUrl: null
   });
   const [championships, setChampionships] = useState([]);
+  const [selectedChampionship, setSelectedChampionship] = useState(null);
   const [drivers, setDrivers] = useState([]);
   const [races, setRaces] = useState([]);
   const [results, setResults] = useState([]);
-  const [activeTab, setActiveTab] = useState('championships');
+  const [activeTab, setActiveTab] = useState('drivers');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (selectedChampionship) {
+      loadChampionshipData(selectedChampionship.id);
+    }
+  }, [selectedChampionship]);
 
   const loadData = async () => {
     setLoading(true);
@@ -45,19 +52,43 @@ export default function SimRacingApp() {
       const { data: champsData } = await supabase.from('championships').select('*').order('created_at', { ascending: false });
       if (champsData) setChampionships(champsData);
 
-      const { data: driversData } = await supabase.from('drivers').select('*').order('number');
-      if (driversData) setDrivers(driversData);
-
-      const { data: racesData } = await supabase.from('races').select('*').order('date');
-      if (racesData) setRaces(racesData);
-
-      const { data: resultsData } = await supabase.from('results').select('*').order('created_at', { ascending: false });
-      if (resultsData) setResults(resultsData);
-
     } catch (error) {
       console.error('Error loading:', error);
     }
     setLoading(false);
+  };
+
+  const loadChampionshipData = async (championshipId) => {
+    try {
+      const { data: driversData } = await supabase
+        .from('drivers')
+        .select('*')
+        .eq('championship_id', championshipId)
+        .order('number');
+      if (driversData) setDrivers(driversData);
+
+      const { data: racesData } = await supabase
+        .from('races')
+        .select('*')
+        .eq('championship_id', championshipId)
+        .order('date');
+      if (racesData) setRaces(racesData);
+
+      const raceIds = racesData?.map(r => r.id) || [];
+      if (raceIds.length > 0) {
+        const { data: resultsData } = await supabase
+          .from('results')
+          .select('*')
+          .in('race_id', raceIds)
+          .order('created_at', { ascending: false });
+        if (resultsData) setResults(resultsData);
+      } else {
+        setResults([]);
+      }
+
+    } catch (error) {
+      console.error('Error loading championship data:', error);
+    }
   };
 
   const saveThemeData = async (newTheme) => {
@@ -147,19 +178,27 @@ export default function SimRacingApp() {
         <nav className="shadow-lg" style={{ backgroundColor: theme.secondary }}>
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex justify-between items-center h-16">
-              <div className="flex items-center">
+              <div className="flex items-center gap-4">
                 {theme.appLogoUrl ? (
-                  <img src={theme.appLogoUrl} alt="Logo" className="w-8 h-8 mr-3 object-contain" />
+                  <img src={theme.appLogoUrl} alt="Logo" className="w-8 h-8 object-contain" />
                 ) : (
-                  <Trophy className="w-8 h-8 text-white mr-3" />
+                  <Trophy className="w-8 h-8 text-white" />
                 )}
                 <span className="text-white text-xl font-bold">{theme.appTitle}</span>
+                {selectedChampionship && (
+                  <>
+                    <span className="text-white text-xl">→</span>
+                    <span className="text-white text-lg">{selectedChampionship.name}</span>
+                  </>
+                )}
               </div>
               <div className="flex items-center gap-4">
                 <span className="text-white">{user.name}</span>
-                <button onClick={loadData} className="px-4 py-2 rounded-lg text-white flex items-center gap-2" style={{ backgroundColor: theme.primary }}>
-                  <Save className="w-4 h-4" />Ricarica
-                </button>
+                {isAdmin && !selectedChampionship && (
+                  <button onClick={() => setActiveTab('theme')} className="px-4 py-2 rounded-lg text-white flex items-center gap-2" style={{ backgroundColor: theme.primary }}>
+                    <Palette className="w-4 h-4" />Tema
+                  </button>
+                )}
                 <button onClick={() => setUser(null)} className="text-white"><LogOut className="w-5 h-5" /></button>
               </div>
             </div>
@@ -167,40 +206,16 @@ export default function SimRacingApp() {
         </nav>
 
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="flex gap-4 mb-8 overflow-x-auto pb-2">
-            <button onClick={() => setActiveTab('championships')} className={`px-6 py-3 rounded-lg font-semibold whitespace-nowrap ${activeTab === 'championships' ? 'text-white' : 'bg-white text-gray-700'}`} style={activeTab === 'championships' ? { backgroundColor: theme.primary } : {}}>
-              <Trophy className="w-5 h-5 inline mr-2" />Campionati
-            </button>
-            <button onClick={() => setActiveTab('drivers')} className={`px-6 py-3 rounded-lg font-semibold whitespace-nowrap ${activeTab === 'drivers' ? 'text-white' : 'bg-white text-gray-700'}`} style={activeTab === 'drivers' ? { backgroundColor: theme.primary } : {}}>
-              <Users className="w-5 h-5 inline mr-2" />Piloti
-            </button>
-            <button onClick={() => setActiveTab('races')} className={`px-6 py-3 rounded-lg font-semibold whitespace-nowrap ${activeTab === 'races' ? 'text-white' : 'bg-white text-gray-700'}`} style={activeTab === 'races' ? { backgroundColor: theme.primary } : {}}>
-              <Flag className="w-5 h-5 inline mr-2" />Gare
-            </button>
-            <button onClick={() => setActiveTab('results')} className={`px-6 py-3 rounded-lg font-semibold whitespace-nowrap ${activeTab === 'results' ? 'text-white' : 'bg-white text-gray-700'}`} style={activeTab === 'results' ? { backgroundColor: theme.primary } : {}}>
-              <Award className="w-5 h-5 inline mr-2" />Risultati
-            </button>
-            <button onClick={() => setActiveTab('standings')} className={`px-6 py-3 rounded-lg font-semibold whitespace-nowrap ${activeTab === 'standings' ? 'text-white' : 'bg-white text-gray-700'}`} style={activeTab === 'standings' ? { backgroundColor: theme.primary } : {}}>
-              <Award className="w-5 h-5 inline mr-2" />Classifica
-            </button>
-            {isAdmin && (
-              <button onClick={() => setActiveTab('theme')} className={`px-6 py-3 rounded-lg font-semibold whitespace-nowrap ${activeTab === 'theme' ? 'text-white' : 'bg-white text-gray-700'}`} style={activeTab === 'theme' ? { backgroundColor: theme.primary } : {}}>
-                <Palette className="w-5 h-5 inline mr-2" />Tema
-              </button>
-            )}
-          </div>
-
-          {activeTab === 'championships' && <ChampionshipsContent canEdit={canEdit} isAdmin={isAdmin} />}
-          {activeTab === 'drivers' && <DriversContent canEdit={canEdit} isAdmin={isAdmin} />}
-          {activeTab === 'races' && <RacesContent canEdit={canEdit} isAdmin={isAdmin} />}
-          {activeTab === 'results' && <ResultsContent canEdit={canEdit} isAdmin={isAdmin} />}
-          {activeTab === 'standings' && <StandingsContent />}
-          {activeTab === 'theme' && isAdmin && <ThemeContent />}
+          {!selectedChampionship ? (
+            activeTab === 'theme' && isAdmin ? <ThemeContent /> : <ChampionshipsListView canEdit={canEdit} isAdmin={isAdmin} />
+          ) : (
+            <ChampionshipDetailView canEdit={canEdit} isAdmin={isAdmin} />
+          )}
         </div>
       </div>
     );
 
-    function ChampionshipsContent({ canEdit, isAdmin }) {
+    function ChampionshipsListView({ canEdit, isAdmin }) {
       const [editing, setEditing] = useState(null);
       const [form, setForm] = useState({ name: '', season: '', description: '' });
 
@@ -225,7 +240,7 @@ export default function SimRacingApp() {
       };
 
       const handleDelete = async (id) => {
-        if (!window.confirm('Eliminare questo campionato?')) return;
+        if (!window.confirm('Eliminare questo campionato? Verranno eliminati anche tutti i piloti, gare e risultati collegati.')) return;
         try {
           const { error } = await supabase.from('championships').delete().eq('id', id);
           if (error) throw error;
@@ -253,13 +268,14 @@ export default function SimRacingApp() {
               </div>
             </div>
           )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {championships.map(c => (
-              <div key={c.id} className="bg-white rounded-lg shadow p-6">
+              <div key={c.id} className="bg-white rounded-lg shadow p-6 hover:shadow-xl transition cursor-pointer" onClick={() => setSelectedChampionship(c)}>
                 <div className="flex justify-between mb-4">
                   <Trophy className="w-8 h-8" style={{ color: theme.primary }} />
                   {canEdit && (
-                    <div className="flex gap-2">
+                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                       <button onClick={() => { setEditing(c.id); setForm(c); }} className="text-blue-500"><Edit className="w-5 h-5" /></button>
                       {isAdmin && <button onClick={() => handleDelete(c.id)} className="text-red-500"><Trash2 className="w-5 h-5" /></button>}
                     </div>
@@ -268,9 +284,48 @@ export default function SimRacingApp() {
                 <h3 className="text-lg font-bold">{c.name}</h3>
                 <p className="text-gray-600">{c.season}</p>
                 <p className="text-sm text-gray-500 mt-2">{c.description}</p>
+                <div className="mt-4 pt-4 border-t">
+                  <p className="text-sm font-semibold" style={{ color: theme.primary }}>Clicca per entrare →</p>
+                </div>
               </div>
             ))}
           </div>
+        </div>
+      );
+    }
+
+    function ChampionshipDetailView({ canEdit, isAdmin }) {
+      return (
+        <div className="space-y-6">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => { setSelectedChampionship(null); setActiveTab('drivers'); }}
+              className="px-4 py-2 bg-white rounded-lg shadow hover:shadow-md transition flex items-center gap-2"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              Torna ai Campionati
+            </button>
+          </div>
+
+          <div className="flex gap-4 mb-8 overflow-x-auto pb-2">
+            <button onClick={() => setActiveTab('drivers')} className={`px-6 py-3 rounded-lg font-semibold whitespace-nowrap ${activeTab === 'drivers' ? 'text-white' : 'bg-white text-gray-700'}`} style={activeTab === 'drivers' ? { backgroundColor: theme.primary } : {}}>
+              <Users className="w-5 h-5 inline mr-2" />Piloti
+            </button>
+            <button onClick={() => setActiveTab('races')} className={`px-6 py-3 rounded-lg font-semibold whitespace-nowrap ${activeTab === 'races' ? 'text-white' : 'bg-white text-gray-700'}`} style={activeTab === 'races' ? { backgroundColor: theme.primary } : {}}>
+              <Flag className="w-5 h-5 inline mr-2" />Gare
+            </button>
+            <button onClick={() => setActiveTab('results')} className={`px-6 py-3 rounded-lg font-semibold whitespace-nowrap ${activeTab === 'results' ? 'text-white' : 'bg-white text-gray-700'}`} style={activeTab === 'results' ? { backgroundColor: theme.primary } : {}}>
+              <Award className="w-5 h-5 inline mr-2" />Risultati
+            </button>
+            <button onClick={() => setActiveTab('standings')} className={`px-6 py-3 rounded-lg font-semibold whitespace-nowrap ${activeTab === 'standings' ? 'text-white' : 'bg-white text-gray-700'}`} style={activeTab === 'standings' ? { backgroundColor: theme.primary } : {}}>
+              <Award className="w-5 h-5 inline mr-2" />Classifica
+            </button>
+          </div>
+
+          {activeTab === 'drivers' && <DriversContent canEdit={canEdit} isAdmin={isAdmin} />}
+          {activeTab === 'races' && <RacesContent canEdit={canEdit} isAdmin={isAdmin} />}
+          {activeTab === 'results' && <ResultsContent canEdit={canEdit} isAdmin={isAdmin} />}
+          {activeTab === 'standings' && <StandingsContent />}
         </div>
       );
     }
@@ -286,7 +341,7 @@ export default function SimRacingApp() {
             if (error) throw error;
             setDrivers(drivers.map(d => d.id === editing ? { ...d, ...form } : d));
           } else {
-            const { data, error } = await supabase.from('drivers').insert(form).select().single();
+            const { data, error } = await supabase.from('drivers').insert({ ...form, championship_id: selectedChampionship.id }).select().single();
             if (error) throw error;
             setDrivers([...drivers, data]);
           }
@@ -329,6 +384,7 @@ export default function SimRacingApp() {
               </div>
             </div>
           )}
+
           <div className="bg-white rounded-lg shadow overflow-hidden">
             <table className="w-full">
               <thead style={{ backgroundColor: theme.secondary }}>
@@ -375,7 +431,7 @@ export default function SimRacingApp() {
             if (error) throw error;
             setRaces(races.map(r => r.id === editing ? { ...r, ...form } : r));
           } else {
-            const { data, error } = await supabase.from('races').insert(form).select().single();
+            const { data, error } = await supabase.from('races').insert({ ...form, championship_id: selectedChampionship.id }).select().single();
             if (error) throw error;
             setRaces([...races, data]);
           }
@@ -418,6 +474,7 @@ export default function SimRacingApp() {
               </div>
             </div>
           )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {races.map(r => (
               <div key={r.id} className="bg-white rounded-lg shadow p-6">
@@ -557,8 +614,7 @@ export default function SimRacingApp() {
                   {editing ? 'Aggiorna' : 'Aggiungi'}
                 </button>
                 {editing && (
-                  <button onClick={handleCancel} className="px-6 py-2 bg-gray-500 text-white rounde
-                    d-lg">
+                  <button onClick={handleCancel} className="px-6 py-2 bg-gray-500 text-white rounded-lg">
                     Annulla
                   </button>
                 )}
@@ -672,6 +728,16 @@ export default function SimRacingApp() {
 
       return (
         <div className="space-y-6">
+          <div className="flex items-center gap-4 mb-6">
+            <button 
+              onClick={() => setActiveTab('championships')}
+              className="px-4 py-2 bg-white rounded-lg shadow hover:shadow-md transition flex items-center gap-2"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              Torna ai Campionati
+            </button>
+          </div>
+
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-xl font-bold mb-6" style={{ color: local.primary }}>Personalizza App</h3>
             
