@@ -707,119 +707,212 @@ export default function SimRacingApp() {
     }
 
     function ThemeContent() {
-      const [local, setLocal] = useState(theme);
+  const [local, setLocal] = useState(theme);
 
-      const presets = [
-        { name: 'Racing Red', primary: '#ef4444', secondary: '#1f2937', background: '#111827' },
-        { name: 'Ferrari', primary: '#dc2626', secondary: '#450a0a', background: '#7f1d1d' },
-        { name: 'Mercedes', primary: '#6b7280', secondary: '#1f2937', background: '#111827' },
-        { name: 'McLaren', primary: '#f97316', secondary: '#1c1917', background: '#292524' },
-        { name: 'Red Bull', primary: '#3b82f6', secondary: '#1e293b', background: '#0f172a' }
-      ];
+  const presets = [
+    { 
+      name: 'Racing Red', 
+      primary: '#ef4444', 
+      secondary: '#1f2937', 
+      background: '#111827',
+      bgLight: '#f9fafb' // sfondo chiaro per le card
+    },
+    { 
+      name: 'Ferrari Dark', 
+      primary: '#dc2626', 
+      secondary: '#7f1d1d', 
+      background: '#450a0a',
+      bgLight: '#fef2f2'
+    },
+    { 
+      name: 'Mercedes Silver', 
+      primary: '#06b6d4', 
+      secondary: '#334155', 
+      background: '#1e293b',
+      bgLight: '#f1f5f9'
+    },
+    { 
+      name: 'McLaren Orange', 
+      primary: '#f97316', 
+      secondary: '#431407', 
+      background: '#1c1917',
+      bgLight: '#fff7ed'
+    },
+    { 
+      name: 'Red Bull Racing', 
+      primary: '#eab308', 
+      secondary: '#1e3a8a', 
+      background: '#0f172a',
+      bgLight: '#dbeafe'
+    },
+    { 
+      name: 'Aston Martin', 
+      primary: '#10b981', 
+      secondary: '#064e3b', 
+      background: '#022c22',
+      bgLight: '#f0fdf4'
+    },
+    { 
+      name: 'Alpine Blue', 
+      primary: '#3b82f6', 
+      secondary: '#1e3a8a', 
+      background: '#0c4a6e',
+      bgLight: '#eff6ff'
+    },
+    { 
+      name: 'Haas Gray', 
+      primary: '#ef4444', 
+      secondary: '#4b5563', 
+      background: '#1f2937',
+      bgLight: '#f3f4f6'
+    },
+    { 
+      name: 'Williams Light', 
+      primary: '#0ea5e9', 
+      secondary: '#0c4a6e', 
+      background: '#e0f2fe',
+      bgLight: '#ffffff'
+    },
+    { 
+      name: 'Dark Purple', 
+      primary: '#a855f7', 
+      secondary: '#581c87', 
+      background: '#2e1065',
+      bgLight: '#faf5ff'
+    }
+  ];
 
-      const applyPreset = (preset) => {
-        setLocal({
-          ...local,
-          primary: preset.primary,
-          secondary: preset.secondary,
-          background: preset.background
-        });
-      };
+  const applyPreset = (preset) => {
+    setLocal({
+      ...local,
+      primary: preset.primary,
+      secondary: preset.secondary,
+      background: preset.background
+    });
+  };
 
-      return (
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4 mb-6">
+        <button 
+          onClick={() => setActiveTab('championships')}
+          className="px-4 py-2 bg-white rounded-lg shadow hover:shadow-md transition flex items-center gap-2"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Torna ai Campionati
+        </button>
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-xl font-bold mb-6" style={{ color: local.primary }}>Personalizza App</h3>
+        
         <div className="space-y-6">
-          <div className="flex items-center gap-4 mb-6">
-            <button 
-              onClick={() => setActiveTab('championships')}
-              className="px-4 py-2 bg-white rounded-lg shadow hover:shadow-md transition flex items-center gap-2"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              Torna ai Campionati
-            </button>
+          <div>
+            <label className="block text-sm font-medium mb-2">Titolo Applicazione</label>
+            <input 
+              type="text" 
+              value={local.appTitle} 
+              onChange={(e) => setLocal({ ...local, appTitle: e.target.value })} 
+              className="w-full px-4 py-2 border rounded-lg"
+              placeholder="Es: Sim Racing Manager"
+            />
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-xl font-bold mb-6" style={{ color: local.primary }}>Personalizza App</h3>
-            
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium mb-2">Titolo Applicazione</label>
-                <input 
-                  type="text" 
-                  value={local.appTitle} 
-                  onChange={(e) => setLocal({ ...local, appTitle: e.target.value })} 
-                  className="w-full px-4 py-2 border rounded-lg"
-                  placeholder="Es: Sim Racing Manager"
-                />
+          <div>
+            <label className="block text-sm font-medium mb-2">URL Logo (immagine)</label>
+            <input 
+              type="text" 
+              value={local.appLogoUrl || ''} 
+              onChange={(e) => setLocal({ ...local, appLogoUrl: e.target.value || null })} 
+              className="w-full px-4 py-2 border rounded-lg"
+              placeholder="Es: https://i.imgur.com/tuaimmagine.png"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Carica la tua immagine su <a href="https://imgur.com/upload" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">Imgur</a> o <a href="https://imgbb.com/" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">ImgBB</a> e incolla qui l'URL diretto
+            </p>
+            {local.appLogoUrl && (
+              <div className="mt-2">
+                <p className="text-xs font-medium mb-1">Anteprima logo:</p>
+                <img src={local.appLogoUrl} alt="Logo preview" className="w-16 h-16 object-contain border rounded" />
               </div>
+            )}
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">URL Logo (immagine)</label>
-                <input 
-                  type="text" 
-                  value={local.appLogoUrl || ''} 
-                  onChange={(e) => setLocal({ ...local, appLogoUrl: e.target.value || null })} 
-                  className="w-full px-4 py-2 border rounded-lg"
-                  placeholder="Es: https://i.imgur.com/tuaimmagine.png"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Carica la tua immagine su <a href="https://imgur.com/upload" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">Imgur</a> o <a href="https://imgbb.com/" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">ImgBB</a> e incolla qui l'URL diretto
-                </p>
-                {local.appLogoUrl && (
-                  <div className="mt-2">
-                    <p className="text-xs font-medium mb-1">Anteprima logo:</p>
-                    <img src={local.appLogoUrl} alt="Logo preview" className="w-16 h-16 object-contain border rounded" />
-                  </div>
-                )}
-              </div>
+          <hr className="my-6" />
 
-              <hr className="my-6" />
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Colore Primario</label>
-                <div className="flex gap-4">
-                  <input type="color" value={local.primary} onChange={(e) => setLocal({ ...local, primary: e.target.value })} className="w-20 h-10 rounded cursor-pointer" />
-                  <input type="text" value={local.primary} onChange={(e) => setLocal({ ...local, primary: e.target.value })} className="flex-1 px-4 py-2 border rounded-lg" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Colore Secondario</label>
-                <div className="flex gap-4">
-                  <input type="color" value={local.secondary} onChange={(e) => setLocal({ ...local, secondary: e.target.value })} className="w-20 h-10 rounded cursor-pointer" />
-                  <input type="text" value={local.secondary} onChange={(e) => setLocal({ ...local, secondary: e.target.value })} className="flex-1 px-4 py-2 border rounded-lg" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Colore Sfondo</label>
-                <div className="flex gap-4">
-                  <input type="color" value={local.background} onChange={(e) => setLocal({ ...local, background: e.target.value })} className="w-20 h-10 rounded cursor-pointer" />
-                  <input type="text" value={local.background} onChange={(e) => setLocal({ ...local, background: e.target.value })} className="flex-1 px-4 py-2 border rounded-lg" />
-                </div>
-              </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Colore Primario (pulsanti, accenti)</label>
+            <div className="flex gap-4">
+              <input type="color" value={local.primary} onChange={(e) => setLocal({ ...local, primary: e.target.value })} className="w-20 h-10 rounded cursor-pointer" />
+              <input type="text" value={local.primary} onChange={(e) => setLocal({ ...local, primary: e.target.value })} className="flex-1 px-4 py-2 border rounded-lg" />
             </div>
-            
-            <button onClick={() => saveThemeData(local)} className="mt-6 px-6 py-2 text-white rounded-lg" style={{ backgroundColor: local.primary }}>
-              Applica Personalizzazione
-            </button>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Colore Secondario (navbar, headers)</label>
+            <div className="flex gap-4">
+              <input type="color" value={local.secondary} onChange={(e) => setLocal({ ...local, secondary: e.target.value })} className="w-20 h-10 rounded cursor-pointer" />
+              <input type="text" value={local.secondary} onChange={(e) => setLocal({ ...local, secondary: e.target.value })} className="flex-1 px-4 py-2 border rounded-lg" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Colore Sfondo (sfondo generale)</label>
+            <div className="flex gap-4">
+              <input type="color" value={local.background} onChange={(e) => setLocal({ ...local, background: e.target.value })} className="w-20 h-10 rounded cursor-pointer" />
+              <input type="text" value={local.background} onChange={(e) => setLocal({ ...local, background: e.target.value })} className="flex-1 px-4 py-2 border rounded-lg" />
+            </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-xl font-bold mb-4">Temi Predefiniti (solo colori)</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {presets.map((p, idx) => (
-                <button key={idx} onClick={() => applyPreset(p)} className="p-4 border-2 rounded-lg text-left hover:shadow-lg transition" style={{ borderColor: p.primary }}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded" style={{ backgroundColor: p.primary }}></div>
-                    <div className="w-8 h-8 rounded" style={{ backgroundColor: p.secondary }}></div>
-                    <div className="w-8 h-8 rounded" style={{ backgroundColor: p.background }}></div>
-                  </div>
-                  <p className="font-bold">{p.name}</p>
-                </button>
-              ))}
+          {/* Anteprima colori */}
+          <div className="p-4 rounded-lg border">
+            <p className="text-sm font-medium mb-3">Anteprima:</p>
+            <div className="flex gap-2">
+              <div className="px-4 py-2 rounded text-white font-medium" style={{ backgroundColor: local.primary }}>Primario</div>
+              <div className="px-4 py-2 rounded text-white font-medium" style={{ backgroundColor: local.secondary }}>Secondario</div>
+              <div className="px-4 py-2 rounded text-white font-medium border-2" style={{ backgroundColor: local.background }}>Sfondo</div>
             </div>
           </div>
         </div>
-      );
-    }
+        
+        <button onClick={() => saveThemeData(local)} className="mt-6 px-6 py-2 text-white rounded-lg font-semibold hover:opacity-90 transition" style={{ backgroundColor: local.primary }}>
+          💾 Applica Personalizzazione
+        </button>
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-xl font-bold mb-4">Temi Predefiniti</h3>
+        <p className="text-sm text-gray-600 mb-4">Clicca su un tema per applicare tutti i colori (primario, secondario e sfondo)</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {presets.map((p, idx) => (
+            <button 
+              key={idx} 
+              onClick={() => applyPreset(p)} 
+              className="p-4 border-2 rounded-lg text-left hover:shadow-lg transition-all hover:scale-105"
+              style={{ borderColor: p.primary }}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-10 h-10 rounded-lg border-2 border-white shadow" style={{ backgroundColor: p.primary }} title="Primario"></div>
+                <div className="w-10 h-10 rounded-lg border-2 border-white shadow" style={{ backgroundColor: p.secondary }} title="Secondario"></div>
+                <div className="w-10 h-10 rounded-lg border-2 border-gray-300" style={{ backgroundColor: p.background }} title="Sfondo"></div>
+              </div>
+              <p className="font-bold text-gray-800">{p.name}</p>
+              <p className="text-xs text-gray-500 mt-1">Clicca per applicare</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h4 className="font-semibold text-blue-900 mb-2">💡 Suggerimenti:</h4>
+        <ul className="text-sm text-blue-800 space-y-1">
+          <li>• <strong>Primario</strong>: Pulsanti e elementi interattivi</li>
+          <li>• <strong>Secondario</strong>: Navbar e intestazioni tabelle</li>
+          <li>• <strong>Sfondo</strong>: Colore di sfondo della pagina di login</li>
+          <li>• Per sfondi scuri usa colori chiari per il testo</li>
+          <li>• Mantieni sempre un buon contrasto per la leggibilità</li>
+        </ul>
+      </div>
+    </div>
+  );
+}
   }
 }
