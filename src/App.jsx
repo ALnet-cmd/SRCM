@@ -750,262 +750,329 @@ export default function SimRacingApp() {
       );
     }
 function ThemeContent() {
-      const [local, setLocal] = useState(theme);
+  const [local, setLocal] = useState(theme);
+  const [contrastWarning, setContrastWarning] = useState('');
 
-      const presets = [
-        { 
-          name: '🏎️ Ferrari', 
-          primary: '#dc0000',
-          secondary: '#000000',
-          background: '#1a0000',
-          description: 'Il rosso iconico di Maranello'
-        },
-        { 
-          name: '🏎️ Red Bull Racing', 
-          primary: '#0600ef',
-          secondary: '#1e1e1e',
-          background: '#13002b',
-          description: 'Blu e oro del team austriaco'
-        },
-        { 
-          name: '🏎️ Mercedes AMG', 
-          primary: '#00d2be',
-          secondary: '#000000',
-          background: '#1a1a1a',
-          description: 'Argento e verde petrolio'
-        },
-        { 
-          name: '🏎️ McLaren', 
-          primary: '#ff8700',
-          secondary: '#47c7fc',
-          background: '#0a0a0a',
-          description: 'Papaya orange iconico'
-        },
-        { 
-          name: '🏎️ Aston Martin', 
-          primary: '#006f62',
-          secondary: '#00352f',
-          background: '#001a17',
-          description: 'Verde britannico racing'
-        },
-        { 
-          name: '🏎️ Alpine', 
-          primary: '#0090ff',
-          secondary: '#fd4bc6',
-          background: '#001529',
-          description: 'Blu francese e rosa'
-        },
-        { 
-          name: '🏎️ Williams', 
-          primary: '#005aff',
-          secondary: '#00a0de',
-          background: '#e8f4f8',
-          description: 'Blu e bianco storico'
-        },
-        { 
-          name: '🏎️ Alfa Romeo', 
-          primary: '#900000',
-          secondary: '#ffffff',
-          background: '#1a0000',
-          description: 'Rosso italiano e bianco'
-        },
-        { 
-          name: '🏎️ Haas F1', 
-          primary: '#ffffff',
-          secondary: '#b6babd',
-          background: '#2b2b2b',
-          description: 'Bianco e grigio americano'
-        },
-        { 
-          name: '🏎️ AlphaTauri', 
-          primary: '#2b4562',
-          secondary: '#ffffff',
-          background: '#0d1621',
-          description: 'Navy blue e bianco'
-        },
-        { 
-          name: '🏁 Classic Racing', 
-          primary: '#e10600',
-          secondary: '#ffffff',
-          background: '#1a1a1a',
-          description: 'Colori racing classici'
-        },
-        { 
-          name: '🌙 Dark Mode', 
-          primary: '#3b82f6',
-          secondary: '#1e293b',
-          background: '#0f172a',
-          description: 'Tema scuro moderno'
-        }
-      ];
+  // Funzione per calcolare la luminosità di un colore
+  const getLuminance = (hex) => {
+    const rgb = parseInt(hex.slice(1), 16);
+    const r = (rgb >> 16) & 0xff;
+    const g = (rgb >> 8) & 0xff;
+    const b = (rgb >> 0) & 0xff;
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  };
 
-      const applyPreset = (preset) => {
-        setLocal({
-          ...local,
-          primary: preset.primary,
-          secondary: preset.secondary,
-          background: preset.background
-        });
-      };
+  // Funzione per calcolare il rapporto di contrasto
+  const getContrastRatio = (color1, color2) => {
+    const lum1 = getLuminance(color1);
+    const lum2 = getLuminance(color2);
+    const brightest = Math.max(lum1, lum2);
+    const darkest = Math.min(lum1, lum2);
+    return (brightest + 0.05) / (darkest + 0.05);
+  };
 
-      return (
+  // Verifica contrasto quando cambiano i colori
+  useEffect(() => {
+    const warnings = [];
+    
+    // Contrasto primario su bianco (per pulsanti)
+    const primaryOnWhite = getContrastRatio(local.primary, '#ffffff');
+    if (primaryOnWhite < 3) {
+      warnings.push('⚠️ Colore primario troppo chiaro per il testo bianco');
+    }
+
+    // Contrasto secondario su bianco (per navbar)
+    const secondaryOnWhite = getContrastRatio(local.secondary, '#ffffff');
+    if (secondaryOnWhite < 3) {
+      warnings.push('⚠️ Colore secondario troppo chiaro per il testo bianco');
+    }
+
+    // Contrasto tra primario e secondario
+    const primarySecondary = getContrastRatio(local.primary, local.secondary);
+    if (primarySecondary < 2) {
+      warnings.push('⚠️ Colori primario e secondario troppo simili');
+    }
+
+    setContrastWarning(warnings.join(' | '));
+  }, [local.primary, local.secondary, local.background]);
+
+  const presets = [
+    { 
+      name: '🏎️ Ferrari', 
+      primary: '#dc0000',
+      secondary: '#000000',
+      background: '#1a0000',
+      description: 'Il rosso iconico di Maranello'
+    },
+    { 
+      name: '🏎️ Red Bull Racing', 
+      primary: '#0600ef',
+      secondary: '#1e1e1e',
+      background: '#13002b',
+      description: 'Blu e oro del team austriaco'
+    },
+    { 
+      name: '🏎️ Mercedes AMG', 
+      primary: '#00d2be',
+      secondary: '#000000',
+      background: '#1a1a1a',
+      description: 'Argento e verde petrolio'
+    },
+    { 
+      name: '🏎️ McLaren', 
+      primary: '#ff8700',
+      secondary: '#47c7fc',
+      background: '#0a0a0a',
+      description: 'Papaya orange iconico'
+    },
+    { 
+      name: '🏎️ Aston Martin', 
+      primary: '#006f62',
+      secondary: '#00352f',
+      background: '#001a17',
+      description: 'Verde britannico racing'
+    },
+    { 
+      name: '🏎️ Alpine', 
+      primary: '#0090ff',
+      secondary: '#fd4bc6',
+      background: '#001529',
+      description: 'Blu francese e rosa'
+    },
+    { 
+      name: '🏎️ Williams', 
+      primary: '#005aff',
+      secondary: '#00a0de',
+      background: '#e8f4f8',
+      description: 'Blu e bianco storico'
+    },
+    { 
+      name: '🏎️ Alfa Romeo', 
+      primary: '#900000',
+      secondary: '#ffffff',
+      background: '#1a0000',
+      description: 'Rosso italiano e bianco'
+    },
+    { 
+      name: '🏎️ Haas F1', 
+      primary: '#d32f2f',
+      secondary: '#616161',
+      background: '#2b2b2b',
+      description: 'Rosso e grigio americano'
+    },
+    { 
+      name: '🏎️ AlphaTauri', 
+      primary: '#2b4562',
+      secondary: '#ffffff',
+      background: '#0d1621',
+      description: 'Navy blue e bianco'
+    },
+    { 
+      name: '🏁 Classic Racing', 
+      primary: '#e10600',
+      secondary: '#ffffff',
+      background: '#1a1a1a',
+      description: 'Colori racing classici'
+    },
+    { 
+      name: '🌙 Dark Mode', 
+      primary: '#3b82f6',
+      secondary: '#1e293b',
+      background: '#0f172a',
+      description: 'Tema scuro moderno'
+    }
+  ];
+
+  const applyPreset = (preset) => {
+    setLocal({
+      ...local,
+      primary: preset.primary,
+      secondary: preset.secondary,
+      background: preset.background
+    });
+  };
+
+  const handleSave = () => {
+    // Controlla se ci sono problemi di contrasto critici
+    const primaryOnWhite = getContrastRatio(local.primary, '#ffffff');
+    const secondaryOnWhite = getContrastRatio(local.secondary, '#ffffff');
+    
+    if (primaryOnWhite < 2.5 || secondaryOnWhite < 2.5) {
+      if (!window.confirm('⚠️ ATTENZIONE: I colori scelti hanno un contrasto molto basso e potrebbero compromettere la leggibilità. Vuoi procedere comunque?')) {
+        return;
+      }
+    }
+    
+    saveThemeData(local);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4 mb-6">
+        <button 
+          onClick={() => setActiveTab('championships')}
+          className="px-4 py-2 bg-white rounded-lg shadow hover:shadow-md transition flex items-center gap-2"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Torna ai Campionati
+        </button>
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-xl font-bold mb-6" style={{ color: local.primary }}>🎨 Personalizza Applicazione</h3>
+        
         <div className="space-y-6">
-          <div className="flex items-center gap-4 mb-6">
-            <button 
-              onClick={() => setActiveTab('championships')}
-              className="px-4 py-2 bg-white rounded-lg shadow hover:shadow-md transition flex items-center gap-2"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              Torna ai Campionati
-            </button>
+          <div>
+            <label className="block text-sm font-medium mb-2">📝 Titolo Applicazione</label>
+            <input 
+              type="text" 
+              value={local.appTitle} 
+              onChange={(e) => setLocal({ ...local, appTitle: e.target.value })} 
+              className="w-full px-4 py-2 border rounded-lg"
+              placeholder="Es: Sim Racing Manager"
+            />
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-xl font-bold mb-6" style={{ color: local.primary }}>🎨 Personalizza Applicazione</h3>
-            
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium mb-2">📝 Titolo Applicazione</label>
-                <input 
-                  type="text" 
-                  value={local.appTitle} 
-                  onChange={(e) => setLocal({ ...local, appTitle: e.target.value })} 
-                  className="w-full px-4 py-2 border rounded-lg"
-                  placeholder="Es: Sim Racing Manager"
-                />
+          <div>
+            <label className="block text-sm font-medium mb-2">🖼️ URL Logo</label>
+            <input 
+              type="text" 
+              value={local.appLogoUrl || ''} 
+              onChange={(e) => setLocal({ ...local, appLogoUrl: e.target.value || null })} 
+              className="w-full px-4 py-2 border rounded-lg"
+              placeholder="https://i.imgur.com/esempio.png"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Carica su <a href="https://imgur.com/upload" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">Imgur</a> o <a href="https://imgbb.com/" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">ImgBB</a>
+            </p>
+            {local.appLogoUrl && (
+              <div className="mt-2">
+                <img src={local.appLogoUrl} alt="Logo preview" className="w-16 h-16 object-contain border rounded p-1" />
               </div>
+            )}
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">🖼️ URL Logo</label>
-                <input 
-                  type="text" 
-                  value={local.appLogoUrl || ''} 
-                  onChange={(e) => setLocal({ ...local, appLogoUrl: e.target.value || null })} 
-                  className="w-full px-4 py-2 border rounded-lg"
-                  placeholder="https://i.imgur.com/esempio.png"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Carica su <a href="https://imgur.com/upload" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">Imgur</a> o <a href="https://imgbb.com/" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">ImgBB</a>
-                </p>
-                {local.appLogoUrl && (
-                  <div className="mt-2">
-                    <img src={local.appLogoUrl} alt="Logo preview" className="w-16 h-16 object-contain border rounded p-1" />
-                  </div>
-                )}
+          <div>
+            <label className="block text-sm font-medium mb-2">🌄 URL Sfondo Globale (Login)</label>
+            <input 
+              type="text" 
+              value={local.backgroundImageUrl || ''} 
+              onChange={(e) => setLocal({ ...local, backgroundImageUrl: e.target.value || null })} 
+              className="w-full px-4 py-2 border rounded-lg"
+              placeholder="https://i.imgur.com/sfondo.jpg"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Immagine di sfondo per la schermata di login (opzionale)
+            </p>
+            {local.backgroundImageUrl && (
+              <div className="mt-2">
+                <img src={local.backgroundImageUrl} alt="Background preview" className="w-full h-24 object-cover border rounded" />
               </div>
+            )}
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">🌄 URL Sfondo Globale (Login)</label>
-                <input 
-                  type="text" 
-                  value={local.backgroundImageUrl || ''} 
-                  onChange={(e) => setLocal({ ...local, backgroundImageUrl: e.target.value || null })} 
-                  className="w-full px-4 py-2 border rounded-lg"
-                  placeholder="https://i.imgur.com/sfondo.jpg"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Immagine di sfondo per la schermata di login (opzionale)
-                </p>
-                {local.backgroundImageUrl && (
-                  <div className="mt-2">
-                    <img src={local.backgroundImageUrl} alt="Background preview" className="w-full h-24 object-cover border rounded" />
-                  </div>
-                )}
-              </div>
+          <hr className="my-6" />
 
-              <hr className="my-6" />
-
-              <div>
-                <label className="block text-sm font-medium mb-2">🎨 Colore Primario</label>
-                <div className="flex gap-4">
-                  <input type="color" value={local.primary} onChange={(e) => setLocal({ ...local, primary: e.target.value })} className="w-20 h-10 rounded cursor-pointer" />
-                  <input type="text" value={local.primary} onChange={(e) => setLocal({ ...local, primary: e.target.value })} className="flex-1 px-4 py-2 border rounded-lg" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">🎨 Colore Secondario</label>
-                <div className="flex gap-4">
-                  <input type="color" value={local.secondary} onChange={(e) => setLocal({ ...local, secondary: e.target.value })} className="w-20 h-10 rounded cursor-pointer" />
-                  <input type="text" value={local.secondary} onChange={(e) => setLocal({ ...local, secondary: e.target.value })} className="flex-1 px-4 py-2 border rounded-lg" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">🎨 Colore Sfondo</label>
-                <div className="flex gap-4">
-                  <input type="color" value={local.background} onChange={(e) => setLocal({ ...local, background: e.target.value })} className="w-20 h-10 rounded cursor-pointer" />
-                  <input type="text" value={local.background} onChange={(e) => setLocal({ ...local, background: e.target.value })} className="flex-1 px-4 py-2 border rounded-lg" />
-                </div>
-              </div>
-
-              <div className="p-4 rounded-lg border-2" style={{ borderColor: local.primary }}>
-                <p className="text-sm font-medium mb-3">👁️ Anteprima:</p>
-                <div className="flex gap-2 flex-wrap">
-                  <div className="px-4 py-2 rounded text-white font-medium" style={{ backgroundColor: local.primary }}>Primario</div>
-                  <div className="px-4 py-2 rounded text-white font-medium" style={{ backgroundColor: local.secondary }}>Secondario</div>
-                  <div className="px-4 py-2 rounded text-white font-medium border-2 border-gray-400" style={{ backgroundColor: local.background }}>Sfondo</div>
-                </div>
-              </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">🎨 Colore Primario (pulsanti)</label>
+            <div className="flex gap-4">
+              <input type="color" value={local.primary} onChange={(e) => setLocal({ ...local, primary: e.target.value })} className="w-20 h-10 rounded cursor-pointer" />
+              <input type="text" value={local.primary} onChange={(e) => setLocal({ ...local, primary: e.target.value })} className="flex-1 px-4 py-2 border rounded-lg" />
             </div>
-            
-            <button 
-              onClick={() => saveThemeData(local)} 
-              className="mt-6 px-8 py-3 text-white rounded-lg font-bold hover:opacity-90 transition shadow-lg" 
-              style={{ backgroundColor: local.primary }}
-            >
-              💾 Applica Personalizzazione
-            </button>
+            <p className="text-xs text-gray-500 mt-1">Usa colori scuri o vivaci per garantire leggibilità del testo bianco</p>
           </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-2xl font-bold mb-2">🏎️ Temi Formula 1 Ufficiali</h3>
-            <p className="text-sm text-gray-600 mb-6">Colori reali dei team F1 - Clicca per applicare</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {presets.map((p, idx) => (
-                <button 
-                  key={idx} 
-                  onClick={() => applyPreset(p)} 
-                  className="p-4 border-2 rounded-xl text-left hover:shadow-xl transition-all hover:scale-105 group"
-                  style={{ borderColor: p.primary }}
-                >
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-12 h-12 rounded-lg border-2 border-white shadow-md" style={{ backgroundColor: p.primary }}></div>
-                    <div className="w-12 h-12 rounded-lg border-2 border-white shadow-md" style={{ backgroundColor: p.secondary }}></div>
-                    <div className="w-12 h-12 rounded-lg border-2 border-gray-300" style={{ backgroundColor: p.background }}></div>
-                  </div>
-                  <p className="font-bold text-gray-900 text-lg mb-1">{p.name}</p>
-                  <p className="text-xs text-gray-600">{p.description}</p>
-                  <p className="text-xs font-semibold mt-2 opacity-0 group-hover:opacity-100 transition" style={{ color: p.primary }}>
-                    👆 Clicca per applicare
-                  </p>
-                </button>
-              ))}
+          <div>
+            <label className="block text-sm font-medium mb-2">🎨 Colore Secondario (navbar)</label>
+            <div className="flex gap-4">
+              <input type="color" value={local.secondary} onChange={(e) => setLocal({ ...local, secondary: e.target.value })} className="w-20 h-10 rounded cursor-pointer" />
+              <input type="text" value={local.secondary} onChange={(e) => setLocal({ ...local, secondary: e.target.value })} className="flex-1 px-4 py-2 border rounded-lg" />
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Usa colori scuri per garantire leggibilità del testo bianco</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">🎨 Colore Sfondo (login)</label>
+            <div className="flex gap-4">
+              <input type="color" value={local.background} onChange={(e) => setLocal({ ...local, background: e.target.value })} className="w-20 h-10 rounded cursor-pointer" />
+              <input type="text" value={local.background} onChange={(e) => setLocal({ ...local, background: e.target.value })} className="flex-1 px-4 py-2 border rounded-lg" />
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg p-6">
-            <h4 className="font-bold text-blue-900 mb-3 text-lg">💡 Guida Personalizzazione</h4>
-            <div className="grid md:grid-cols-2 gap-4 text-sm text-blue-800">
-              <div>
-                <p className="font-semibold mb-2">🎨 Colori:</p>
-                <ul className="space-y-1 pl-4">
-                  <li>• <strong>Primario</strong>: Pulsanti e accenti</li>
-                  <li>• <strong>Secondario</strong>: Navbar e headers</li>
-                  <li>• <strong>Sfondo</strong>: Pagina login</li>
-                </ul>
-              </div>
-              <div>
-                <p className="font-semibold mb-2">🖼️ Immagini:</p>
-                <ul className="space-y-1 pl-4">
-                  <li>• <strong>Logo</strong>: 512x512px consigliato</li>
-                  <li>• <strong>Sfondo</strong>: 1920x1080px Full HD</li>
-                  <li>• <strong>Cover</strong>: 1200x600px consigliato</li>
-                  <li>• Formati: PNG, JPG, WebP</li>
-                </ul>
-              </div>
+          {/* Alert contrasto */}
+          {contrastWarning && (
+            <div className="p-4 bg-yellow-50 border-2 border-yellow-400 rounded-lg">
+              <p className="text-sm font-semibold text-yellow-800">{contrastWarning}</p>
+              <p className="text-xs text-yellow-700 mt-1">Suggerimento: Usa colori più scuri per primario e secondario</p>
+            </div>
+          )}
+
+          <div className="p-4 rounded-lg border-2" style={{ borderColor: local.primary }}>
+            <p className="text-sm font-medium mb-3">👁️ Anteprima con testo bianco:</p>
+            <div className="flex gap-2 flex-wrap">
+              <div className="px-4 py-2 rounded text-white font-medium" style={{ backgroundColor: local.primary }}>Pulsante Primario</div>
+              <div className="px-4 py-2 rounded text-white font-medium" style={{ backgroundColor: local.secondary }}>Navbar Secondaria</div>
+              <div className="px-4 py-2 rounded text-white font-medium border-2 border-gray-400" style={{ backgroundColor: local.background }}>Sfondo Login</div>
             </div>
           </div>
         </div>
-      );
-    }
-  }
+        
+        <button 
+          onClick={handleSave} 
+          className="mt-6 px-8 py-3 text-white rounded-lg font-bold hover:opacity-90 transition shadow-lg" 
+          style={{ backgroundColor: local.primary }}
+        >
+          💾 Applica Personalizzazione
+        </button>
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-2xl font-bold mb-2">🏎️ Temi Formula 1 Ufficiali</h3>
+        <p className="text-sm text-gray-600 mb-6">Colori reali dei team F1 testati per la leggibilità - Clicca per applicare</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {presets.map((p, idx) => (
+            <button 
+              key={idx} 
+              onClick={() => applyPreset(p)} 
+              className="p-4 border-2 rounded-xl text-left hover:shadow-xl transition-all hover:scale-105 group"
+              style={{ borderColor: p.primary }}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-12 h-12 rounded-lg border-2 border-white shadow-md" style={{ backgroundColor: p.primary }}></div>
+                <div className="w-12 h-12 rounded-lg border-2 border-white shadow-md" style={{ backgroundColor: p.secondary }}></div>
+                <div className="w-12 h-12 rounded-lg border-2 border-gray-300" style={{ backgroundColor: p.background }}></div>
+              </div>
+              <p className="font-bold text-gray-900 text-lg mb-1">{p.name}</p>
+              <p className="text-xs text-gray-600">{p.description}</p>
+              <p className="text-xs font-semibold mt-2 opacity-0 group-hover:opacity-100 transition" style={{ color: p.primary }}>
+                👆 Clicca per applicare
+              </p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg p-6">
+        <h4 className="font-bold text-blue-900 mb-3 text-lg">💡 Guida Personalizzazione</h4>
+        <div className="grid md:grid-cols-2 gap-4 text-sm text-blue-800">
+          <div>
+            <p className="font-semibold mb-2">🎨 Colori:</p>
+            <ul className="space-y-1 pl-4">
+              <li>• <strong>Primario</strong>: Pulsanti (testo bianco sopra)</li>
+              <li>• <strong>Secondario</strong>: Navbar (testo bianco sopra)</li>
+              <li>• <strong>Sfondo</strong>: Pagina login</li>
+              <li>• Evita colori troppo chiari per primario/secondario</li>
+            </ul>
+          </div>
+          <div>
+            <p className="font-semibold mb-2">🖼️ Immagini:</p>
+            <ul className="space-y-1 pl-4">
+              <li>• <strong>Logo</strong>: 512x512px consigliato</li>
+              <li>• <strong>Sfondo</strong>: 1920x1080px Full HD</li>
+              <li>• <strong>Cover</strong>: 1200x600px consigliato</li>
+              <li>• Formati: PNG, JPG, WebP</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
