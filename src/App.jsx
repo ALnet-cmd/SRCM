@@ -1074,5 +1074,7 @@ function ThemeContent() {
         </div>
       </div>
     </div>
-  );
+      );
+    }
+  }
 }
