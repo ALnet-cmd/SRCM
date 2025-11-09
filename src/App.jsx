@@ -9,7 +9,8 @@ export default function SimRacingApp() {
     secondary: '#1f2937', 
     background: '#111827',
     appTitle: 'Sim Racing Manager',
-    appLogoUrl: null
+    appLogoUrl: null,
+    backgroundImageUrl: null
   });
   const [championships, setChampionships] = useState([]);
   const [selectedChampionship, setSelectedChampionship] = useState(null);
@@ -45,7 +46,8 @@ export default function SimRacingApp() {
           secondary: themeData.secondary_color,
           background: themeData.background_color,
           appTitle: themeData.app_title || 'Sim Racing Manager',
-          appLogoUrl: themeData.app_logo_url || null
+          appLogoUrl: themeData.app_logo_url || null,
+          backgroundImageUrl: themeData.background_image_url || null
         });
       }
 
@@ -98,7 +100,8 @@ export default function SimRacingApp() {
         secondary_color: newTheme.secondary,
         background_color: newTheme.background,
         app_title: newTheme.appTitle,
-        app_logo_url: newTheme.appLogoUrl
+        app_logo_url: newTheme.appLogoUrl,
+        background_image_url: newTheme.backgroundImageUrl
       });
 
       if (error) throw error;
@@ -143,7 +146,14 @@ export default function SimRacingApp() {
     };
 
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: `linear-gradient(135deg, ${theme.background} 0%, ${theme.secondary} 100%)` }}>
+      <div 
+        className="min-h-screen flex items-center justify-center p-4" 
+        style={{ 
+          background: theme.backgroundImageUrl 
+            ? `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url(${theme.backgroundImageUrl}) center/cover` 
+            : `linear-gradient(135deg, ${theme.background} 0%, ${theme.secondary} 100%)`
+        }}
+      >
         <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">
           <div className="flex items-center justify-center mb-8">
             {theme.appLogoUrl ? (
@@ -217,26 +227,46 @@ export default function SimRacingApp() {
 
     function ChampionshipsListView({ canEdit, isAdmin }) {
       const [editing, setEditing] = useState(null);
-      const [form, setForm] = useState({ name: '', season: '', description: '' });
+      const [form, setForm] = useState({ name: '', season: '', description: '', coverImageUrl: '' });
 
       const handleSubmit = async () => {
         try {
           if (editing) {
-            const { error } = await supabase.from('championships').update({ name: form.name, season: form.season, description: form.description }).eq('id', editing);
+            const { error } = await supabase.from('championships').update({ 
+              name: form.name, 
+              season: form.season, 
+              description: form.description,
+              cover_image_url: form.coverImageUrl || null
+            }).eq('id', editing);
             if (error) throw error;
-            setChampionships(championships.map(c => c.id === editing ? { ...c, ...form } : c));
+            setChampionships(championships.map(c => c.id === editing ? { ...c, ...form, cover_image_url: form.coverImageUrl } : c));
           } else {
-            const { data, error } = await supabase.from('championships').insert({ name: form.name, season: form.season, description: form.description }).select().single();
+            const { data, error } = await supabase.from('championships').insert({ 
+              name: form.name, 
+              season: form.season, 
+              description: form.description,
+              cover_image_url: form.coverImageUrl || null
+            }).select().single();
             if (error) throw error;
             setChampionships([...championships, data]);
           }
           setEditing(null);
-          setForm({ name: '', season: '', description: '' });
+          setForm({ name: '', season: '', description: '', coverImageUrl: '' });
           alert('Salvato!');
         } catch (error) {
           console.error('Error:', error);
           alert('Errore nel salvataggio');
         }
+      };
+
+      const handleEdit = (c) => {
+        setEditing(c.id);
+        setForm({ 
+          name: c.name, 
+          season: c.season, 
+          description: c.description,
+          coverImageUrl: c.cover_image_url || ''
+        });
       };
 
       const handleDelete = async (id) => {
@@ -257,35 +287,50 @@ export default function SimRacingApp() {
           {canEdit && (
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-xl font-bold mb-4" style={{ color: theme.primary }}>{editing ? 'Modifica' : 'Nuovo'} Campionato</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input placeholder="Nome" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="px-4 py-2 border rounded-lg" />
                 <input placeholder="Stagione" value={form.season} onChange={(e) => setForm({ ...form, season: e.target.value })} className="px-4 py-2 border rounded-lg" />
                 <input placeholder="Descrizione" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="px-4 py-2 border rounded-lg" />
+                <input placeholder="URL Cover (opzionale)" value={form.coverImageUrl} onChange={(e) => setForm({ ...form, coverImageUrl: e.target.value })} className="px-4 py-2 border rounded-lg" />
               </div>
+              {form.coverImageUrl && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium mb-2">Anteprima Cover:</p>
+                  <img src={form.coverImageUrl} alt="Cover preview" className="w-full h-48 object-cover rounded-lg border" />
+                </div>
+              )}
               <div className="flex gap-2 mt-4">
                 <button onClick={handleSubmit} className="px-6 py-2 text-white rounded-lg" style={{ backgroundColor: theme.primary }}>{editing ? 'Aggiorna' : 'Aggiungi'}</button>
-                {editing && <button onClick={() => { setEditing(null); setForm({ name: '', season: '', description: '' }); }} className="px-6 py-2 bg-gray-500 text-white rounded-lg">Annulla</button>}
+                {editing && <button onClick={() => { setEditing(null); setForm({ name: '', season: '', description: '', coverImageUrl: '' }); }} className="px-6 py-2 bg-gray-500 text-white rounded-lg">Annulla</button>}
               </div>
             </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {championships.map(c => (
-              <div key={c.id} className="bg-white rounded-lg shadow p-6 hover:shadow-xl transition cursor-pointer" onClick={() => setSelectedChampionship(c)}>
-                <div className="flex justify-between mb-4">
-                  <Trophy className="w-8 h-8" style={{ color: theme.primary }} />
-                  {canEdit && (
-                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                      <button onClick={() => { setEditing(c.id); setForm(c); }} className="text-blue-500"><Edit className="w-5 h-5" /></button>
-                      {isAdmin && <button onClick={() => handleDelete(c.id)} className="text-red-500"><Trash2 className="w-5 h-5" /></button>}
-                    </div>
-                  )}
-                </div>
-                <h3 className="text-lg font-bold">{c.name}</h3>
-                <p className="text-gray-600">{c.season}</p>
-                <p className="text-sm text-gray-500 mt-2">{c.description}</p>
-                <div className="mt-4 pt-4 border-t">
-                  <p className="text-sm font-semibold" style={{ color: theme.primary }}>Clicca per entrare →</p>
+              <div key={c.id} className="bg-white rounded-lg shadow overflow-hidden hover:shadow-xl transition cursor-pointer" onClick={() => setSelectedChampionship(c)}>
+                {c.cover_image_url && (
+                  <div className="h-48 overflow-hidden">
+                    <img src={c.cover_image_url} alt={c.name} className="w-full h-full object-cover hover:scale-110 transition duration-300" />
+                  </div>
+                )}
+                
+                <div className="p-6">
+                  <div className="flex justify-between mb-4">
+                    <Trophy className="w-8 h-8" style={{ color: theme.primary }} />
+                    {canEdit && (
+                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={() => handleEdit(c)} className="text-blue-500"><Edit className="w-5 h-5" /></button>
+                        {isAdmin && <button onClick={() => handleDelete(c.id)} className="text-red-500"><Trash2 className="w-5 h-5" /></button>}
+                      </div>
+                    )}
+                  </div>
+                  <h3 className="text-lg font-bold">{c.name}</h3>
+                  <p className="text-gray-600">{c.season}</p>
+                  <p className="text-sm text-gray-500 mt-2">{c.description}</p>
+                  <div className="mt-4 pt-4 border-t">
+                    <p className="text-sm font-semibold" style={{ color: theme.primary }}>Clicca per entrare →</p>
+                  </div>
                 </div>
               </div>
             ))}
@@ -293,7 +338,6 @@ export default function SimRacingApp() {
         </div>
       );
     }
-
     function ChampionshipDetailView({ canEdit, isAdmin }) {
       return (
         <div className="space-y-6">
@@ -705,214 +749,3 @@ export default function SimRacingApp() {
         </div>
       );
     }
-
-    function ThemeContent() {
-  const [local, setLocal] = useState(theme);
-
-  const presets = [
-    { 
-      name: 'Racing Red', 
-      primary: '#ef4444', 
-      secondary: '#1f2937', 
-      background: '#111827',
-      bgLight: '#f9fafb' // sfondo chiaro per le card
-    },
-    { 
-      name: 'Ferrari Dark', 
-      primary: '#dc2626', 
-      secondary: '#7f1d1d', 
-      background: '#450a0a',
-      bgLight: '#fef2f2'
-    },
-    { 
-      name: 'Mercedes Silver', 
-      primary: '#06b6d4', 
-      secondary: '#334155', 
-      background: '#1e293b',
-      bgLight: '#f1f5f9'
-    },
-    { 
-      name: 'McLaren Orange', 
-      primary: '#f97316', 
-      secondary: '#431407', 
-      background: '#1c1917',
-      bgLight: '#fff7ed'
-    },
-    { 
-      name: 'Red Bull Racing', 
-      primary: '#eab308', 
-      secondary: '#1e3a8a', 
-      background: '#0f172a',
-      bgLight: '#dbeafe'
-    },
-    { 
-      name: 'Aston Martin', 
-      primary: '#10b981', 
-      secondary: '#064e3b', 
-      background: '#022c22',
-      bgLight: '#f0fdf4'
-    },
-    { 
-      name: 'Alpine Blue', 
-      primary: '#3b82f6', 
-      secondary: '#1e3a8a', 
-      background: '#0c4a6e',
-      bgLight: '#eff6ff'
-    },
-    { 
-      name: 'Haas Gray', 
-      primary: '#ef4444', 
-      secondary: '#4b5563', 
-      background: '#1f2937',
-      bgLight: '#f3f4f6'
-    },
-    { 
-      name: 'Williams Light', 
-      primary: '#0ea5e9', 
-      secondary: '#0c4a6e', 
-      background: '#e0f2fe',
-      bgLight: '#ffffff'
-    },
-    { 
-      name: 'Dark Purple', 
-      primary: '#a855f7', 
-      secondary: '#581c87', 
-      background: '#2e1065',
-      bgLight: '#faf5ff'
-    }
-  ];
-
-  const applyPreset = (preset) => {
-    setLocal({
-      ...local,
-      primary: preset.primary,
-      secondary: preset.secondary,
-      background: preset.background
-    });
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4 mb-6">
-        <button 
-          onClick={() => setActiveTab('championships')}
-          className="px-4 py-2 bg-white rounded-lg shadow hover:shadow-md transition flex items-center gap-2"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Torna ai Campionati
-        </button>
-      </div>
-
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-xl font-bold mb-6" style={{ color: local.primary }}>Personalizza App</h3>
-        
-        <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium mb-2">Titolo Applicazione</label>
-            <input 
-              type="text" 
-              value={local.appTitle} 
-              onChange={(e) => setLocal({ ...local, appTitle: e.target.value })} 
-              className="w-full px-4 py-2 border rounded-lg"
-              placeholder="Es: Sim Racing Manager"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">URL Logo (immagine)</label>
-            <input 
-              type="text" 
-              value={local.appLogoUrl || ''} 
-              onChange={(e) => setLocal({ ...local, appLogoUrl: e.target.value || null })} 
-              className="w-full px-4 py-2 border rounded-lg"
-              placeholder="Es: https://i.imgur.com/tuaimmagine.png"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Carica la tua immagine su <a href="https://imgur.com/upload" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">Imgur</a> o <a href="https://imgbb.com/" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">ImgBB</a> e incolla qui l'URL diretto
-            </p>
-            {local.appLogoUrl && (
-              <div className="mt-2">
-                <p className="text-xs font-medium mb-1">Anteprima logo:</p>
-                <img src={local.appLogoUrl} alt="Logo preview" className="w-16 h-16 object-contain border rounded" />
-              </div>
-            )}
-          </div>
-
-          <hr className="my-6" />
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Colore Primario (pulsanti, accenti)</label>
-            <div className="flex gap-4">
-              <input type="color" value={local.primary} onChange={(e) => setLocal({ ...local, primary: e.target.value })} className="w-20 h-10 rounded cursor-pointer" />
-              <input type="text" value={local.primary} onChange={(e) => setLocal({ ...local, primary: e.target.value })} className="flex-1 px-4 py-2 border rounded-lg" />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">Colore Secondario (navbar, headers)</label>
-            <div className="flex gap-4">
-              <input type="color" value={local.secondary} onChange={(e) => setLocal({ ...local, secondary: e.target.value })} className="w-20 h-10 rounded cursor-pointer" />
-              <input type="text" value={local.secondary} onChange={(e) => setLocal({ ...local, secondary: e.target.value })} className="flex-1 px-4 py-2 border rounded-lg" />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">Colore Sfondo (sfondo generale)</label>
-            <div className="flex gap-4">
-              <input type="color" value={local.background} onChange={(e) => setLocal({ ...local, background: e.target.value })} className="w-20 h-10 rounded cursor-pointer" />
-              <input type="text" value={local.background} onChange={(e) => setLocal({ ...local, background: e.target.value })} className="flex-1 px-4 py-2 border rounded-lg" />
-            </div>
-          </div>
-
-          {/* Anteprima colori */}
-          <div className="p-4 rounded-lg border">
-            <p className="text-sm font-medium mb-3">Anteprima:</p>
-            <div className="flex gap-2">
-              <div className="px-4 py-2 rounded text-white font-medium" style={{ backgroundColor: local.primary }}>Primario</div>
-              <div className="px-4 py-2 rounded text-white font-medium" style={{ backgroundColor: local.secondary }}>Secondario</div>
-              <div className="px-4 py-2 rounded text-white font-medium border-2" style={{ backgroundColor: local.background }}>Sfondo</div>
-            </div>
-          </div>
-        </div>
-        
-        <button onClick={() => saveThemeData(local)} className="mt-6 px-6 py-2 text-white rounded-lg font-semibold hover:opacity-90 transition" style={{ backgroundColor: local.primary }}>
-          💾 Applica Personalizzazione
-        </button>
-      </div>
-
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-xl font-bold mb-4">Temi Predefiniti</h3>
-        <p className="text-sm text-gray-600 mb-4">Clicca su un tema per applicare tutti i colori (primario, secondario e sfondo)</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {presets.map((p, idx) => (
-            <button 
-              key={idx} 
-              onClick={() => applyPreset(p)} 
-              className="p-4 border-2 rounded-lg text-left hover:shadow-lg transition-all hover:scale-105"
-              style={{ borderColor: p.primary }}
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-10 h-10 rounded-lg border-2 border-white shadow" style={{ backgroundColor: p.primary }} title="Primario"></div>
-                <div className="w-10 h-10 rounded-lg border-2 border-white shadow" style={{ backgroundColor: p.secondary }} title="Secondario"></div>
-                <div className="w-10 h-10 rounded-lg border-2 border-gray-300" style={{ backgroundColor: p.background }} title="Sfondo"></div>
-              </div>
-              <p className="font-bold text-gray-800">{p.name}</p>
-              <p className="text-xs text-gray-500 mt-1">Clicca per applicare</p>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="font-semibold text-blue-900 mb-2">💡 Suggerimenti:</h4>
-        <ul className="text-sm text-blue-800 space-y-1">
-          <li>• <strong>Primario</strong>: Pulsanti e elementi interattivi</li>
-          <li>• <strong>Secondario</strong>: Navbar e intestazioni tabelle</li>
-          <li>• <strong>Sfondo</strong>: Colore di sfondo della pagina di login</li>
-          <li>• Per sfondi scuri usa colori chiari per il testo</li>
-          <li>• Mantieni sempre un buon contrasto per la leggibilità</li>
-        </ul>
-      </div>
-    </div>
-  );
-}
-  }
-}
