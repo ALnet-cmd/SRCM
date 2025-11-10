@@ -365,3 +365,534 @@ export default function SimRacingApp() {
         </div>
       );
     }
+
+    function ChampionshipDetailView({ canEdit, isAdmin }) {
+      const [editingDriver, setEditingDriver] = useState(null);
+      const [driverForm, setDriverForm] = useState({ name: '', number: '', team: '', nationality: '' });
+      const [editingRace, setEditingRace] = useState(null);
+      const [raceForm, setRaceForm] = useState({ name: '', location: '', date: '', trackImageUrl: '' });
+      const [editingResult, setEditingResult] = useState(null);
+      const [resultForm, setResultForm] = useState({ race_id: '', driver_id: '', position: '', points: '', fastest_lap: false });
+
+      const handleDriverSubmit = async () => {
+        try {
+          if (editingDriver) {
+            const { error } = await supabase.from('drivers').update({
+              name: driverForm.name,
+              number: driverForm.number,
+              team: driverForm.team,
+              nationality: driverForm.nationality
+            }).eq('id', editingDriver);
+            if (error) throw error;
+            setDrivers(drivers.map(d => d.id === editingDriver ? { ...d, ...driverForm } : d));
+          } else {
+            const { data, error } = await supabase.from('drivers').insert({
+              championship_id: selectedChampionship.id,
+              name: driverForm.name,
+              number: driverForm.number,
+              team: driverForm.team,
+              nationality: driverForm.nationality
+            }).select().single();
+            if (error) throw error;
+            setDrivers([...drivers, data]);
+          }
+          setEditingDriver(null);
+          setDriverForm({ name: '', number: '', team: '', nationality: '' });
+          alert(t.saved);
+        } catch (error) {
+          console.error('Error:', error);
+          alert(t.savingError);
+        }
+      };
+
+      const handleRaceSubmit = async () => {
+        try {
+          if (editingRace) {
+            const { error } = await supabase.from('races').update({
+              name: raceForm.name,
+              location: raceForm.location,
+              date: raceForm.date,
+              track_image_url: raceForm.trackImageUrl || null
+            }).eq('id', editingRace);
+            if (error) throw error;
+            setRaces(races.map(r => r.id === editingRace ? { ...r, ...raceForm, track_image_url: raceForm.trackImageUrl } : r));
+          } else {
+            const { data, error } = await supabase.from('races').insert({
+              championship_id: selectedChampionship.id,
+              name: raceForm.name,
+              location: raceForm.location,
+              date: raceForm.date,
+              track_image_url: raceForm.trackImageUrl || null
+            }).select().single();
+            if (error) throw error;
+            setRaces([...races, data]);
+          }
+          setEditingRace(null);
+          setRaceForm({ name: '', location: '', date: '', trackImageUrl: '' });
+          alert(t.saved);
+        } catch (error) {
+          console.error('Error:', error);
+          alert(t.savingError);
+        }
+      };
+
+      const handleResultSubmit = async () => {
+        try {
+          if (editingResult) {
+            const { error } = await supabase.from('results').update({
+              race_id: resultForm.race_id,
+              driver_id: resultForm.driver_id,
+              position: resultForm.position,
+              points: resultForm.points,
+              fastest_lap: resultForm.fastest_lap
+            }).eq('id', editingResult);
+            if (error) throw error;
+            setResults(results.map(r => r.id === editingResult ? { ...r, ...resultForm } : r));
+          } else {
+            const { data, error } = await supabase.from('results').insert({
+              race_id: resultForm.race_id,
+              driver_id: resultForm.driver_id,
+              position: resultForm.position,
+              points: resultForm.points,
+              fastest_lap: resultForm.fastest_lap
+            }).select().single();
+            if (error) throw error;
+            setResults([...results, data]);
+          }
+          setEditingResult(null);
+          setResultForm({ race_id: '', driver_id: '', position: '', points: '', fastest_lap: false });
+          alert(t.saved);
+        } catch (error) {
+          console.error('Error:', error);
+          alert(t.savingError);
+        }
+      };
+
+      const calculateStandings = () => {
+        const standings = {};
+        drivers.forEach(driver => {
+          standings[driver.id] = {
+            driver,
+            totalPoints: 0,
+            wins: 0,
+            podiums: 0
+          };
+        });
+
+        results.forEach(result => {
+          if (standings[result.driver_id]) {
+            standings[result.driver_id].totalPoints += result.points || 0;
+            if (result.position === 1) standings[result.driver_id].wins++;
+            if (result.position <= 3) standings[result.driver_id].podiums++;
+          }
+        });
+
+        return Object.values(standings)
+          .sort((a, b) => b.totalPoints - a.totalPoints)
+          .map((standing, index) => ({ ...standing, position: index + 1 }));
+      };
+
+      const standings = calculateStandings();
+
+      return (
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button onClick={() => setSelectedChampionship(null)} className="p-2 rounded-lg bg-white shadow">
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <h1 className="text-3xl font-bold">{selectedChampionship.name}</h1>
+              <span className="text-lg text-gray-600">{selectedChampionship.season}</span>
+            </div>
+            <div className="flex gap-2">
+              {['drivers', 'races', 'results', 'standings'].map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-4 py-2 rounded-lg font-semibold ${
+                    activeTab === tab 
+                      ? 'text-white' 
+                      : 'bg-white text-gray-700'
+                  }`}
+                  style={{ backgroundColor: activeTab === tab ? theme.primary : undefined }}
+                >
+                  {t[tab]}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Drivers Tab */}
+          {activeTab === 'drivers' && (
+            <div className="space-y-6">
+              {canEdit && (
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h3 className="text-xl font-bold mb-4" style={{ color: theme.primary }}>
+                    {editingDriver ? t.editDriver : t.newDriver}
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input placeholder={t.driverName} value={driverForm.name} onChange={(e) => setDriverForm({ ...driverForm, name: e.target.value })} className="px-4 py-2 border rounded-lg" />
+                    <input placeholder={t.driverNumber} type="number" value={driverForm.number} onChange={(e) => setDriverForm({ ...driverForm, number: e.target.value })} className="px-4 py-2 border rounded-lg" />
+                    <input placeholder={t.team} value={driverForm.team} onChange={(e) => setDriverForm({ ...driverForm, team: e.target.value })} className="px-4 py-2 border rounded-lg" />
+                    <input placeholder={t.nationality} value={driverForm.nationality} onChange={(e) => setDriverForm({ ...driverForm, nationality: e.target.value })} className="px-4 py-2 border rounded-lg" />
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    <button onClick={handleDriverSubmit} className="px-6 py-2 text-white rounded-lg" style={{ backgroundColor: theme.primary }}>
+                      {editingDriver ? t.update : t.add}
+                    </button>
+                    {editingDriver && (
+                      <button onClick={() => { setEditingDriver(null); setDriverForm({ name: '', number: '', team: '', nationality: '' }); }} className="px-6 py-2 bg-gray-500 text-white rounded-lg">
+                        {t.cancel}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {drivers.map(driver => (
+                  <div key={driver.id} className="bg-white rounded-lg shadow p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style={{ backgroundColor: theme.primary }}>
+                          {driver.number}
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg">{driver.name}</h3>
+                          <p className="text-gray-600">{driver.team}</p>
+                        </div>
+                      </div>
+                      {canEdit && (
+                        <div className="flex gap-2">
+                          <button onClick={() => { setEditingDriver(driver.id); setDriverForm({ name: driver.name, number: driver.number, team: driver.team, nationality: driver.nationality }); }} className="text-blue-500">
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          {isAdmin && (
+                            <button onClick={async () => {
+                              if (!window.confirm(t.deleteDriverConfirm)) return;
+                              try {
+                                const { error } = await supabase.from('drivers').delete().eq('id', driver.id);
+                                if (error) throw error;
+                                setDrivers(drivers.filter(d => d.id !== driver.id));
+                                alert(t.deleted);
+                              } catch (error) {
+                                console.error('Error:', error);
+                                alert(t.deletionError);
+                              }
+                            }} className="text-red-500">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      <p>{t.nationality}: {driver.nationality}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Races Tab */}
+          {activeTab === 'races' && (
+            <div className="space-y-6">
+              {canEdit && (
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h3 className="text-xl font-bold mb-4" style={{ color: theme.primary }}>
+                    {editingRace ? t.editRace : t.newRace}
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input placeholder={t.raceName} value={raceForm.name} onChange={(e) => setRaceForm({ ...raceForm, name: e.target.value })} className="px-4 py-2 border rounded-lg" />
+                    <input placeholder={t.location} value={raceForm.location} onChange={(e) => setRaceForm({ ...raceForm, location: e.target.value })} className="px-4 py-2 border rounded-lg" />
+                    <input type="date" value={raceForm.date} onChange={(e) => setRaceForm({ ...raceForm, date: e.target.value })} className="px-4 py-2 border rounded-lg" />
+                    <input placeholder={t.trackImageUrl} value={raceForm.trackImageUrl} onChange={(e) => setRaceForm({ ...raceForm, trackImageUrl: e.target.value })} className="px-4 py-2 border rounded-lg" />
+                  </div>
+                  {raceForm.trackImageUrl && (
+                    <div className="mt-4">
+                      <p className="text-sm font-medium mb-2">{t.trackPreview}</p>
+                      <img src={raceForm.trackImageUrl} alt="Track preview" className="w-full h-48 object-cover rounded-lg border" />
+                    </div>
+                  )}
+                  <div className="flex gap-2 mt-4">
+                    <button onClick={handleRaceSubmit} className="px-6 py-2 text-white rounded-lg" style={{ backgroundColor: theme.primary }}>
+                      {editingRace ? t.update : t.add}
+                    </button>
+                    {editingRace && (
+                      <button onClick={() => { setEditingRace(null); setRaceForm({ name: '', location: '', date: '', trackImageUrl: '' }); }} className="px-6 py-2 bg-gray-500 text-white rounded-lg">
+                        {t.cancel}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {races.map(race => (
+                  <div key={race.id} className="bg-white rounded-lg shadow overflow-hidden">
+                    {race.track_image_url && (
+                      <div className="h-32 overflow-hidden">
+                        <img src={race.track_image_url} alt={race.name} className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <div className="p-6">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="font-bold text-lg">{race.name}</h3>
+                          <p className="text-gray-600">{race.location}</p>
+                          <p className="text-sm text-gray-500">{new Date(race.date).toLocaleDateString()}</p>
+                        </div>
+                        {canEdit && (
+                          <div className="flex gap-2">
+                            <button onClick={() => { setEditingRace(race.id); setRaceForm({ name: race.name, location: race.location, date: race.date, trackImageUrl: race.track_image_url || '' }); }} className="text-blue-500">
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            {isAdmin && (
+                              <button onClick={async () => {
+                                if (!window.confirm(t.deleteRaceConfirm)) return;
+                                try {
+                                  const { error } = await supabase.from('races').delete().eq('id', race.id);
+                                  if (error) throw error;
+                                  setRaces(races.filter(r => r.id !== race.id));
+                                  alert(t.deleted);
+                                } catch (error) {
+                                  console.error('Error:', error);
+                                  alert(t.deletionError);
+                                }
+                              }} className="text-red-500">
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Results Tab */}
+          {activeTab === 'results' && (
+            <div className="space-y-6">
+              {canEdit && (
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h3 className="text-xl font-bold mb-4" style={{ color: theme.primary }}>
+                    {editingResult ? t.editResult : t.newResult}
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <select value={resultForm.race_id} onChange={(e) => setResultForm({ ...resultForm, race_id: e.target.value })} className="px-4 py-2 border rounded-lg">
+                      <option value="">{t.selectRace}</option>
+                      {races.map(race => (
+                        <option key={race.id} value={race.id}>{race.name}</option>
+                      ))}
+                    </select>
+                    <select value={resultForm.driver_id} onChange={(e) => setResultForm({ ...resultForm, driver_id: e.target.value })} className="px-4 py-2 border rounded-lg">
+                      <option value="">{t.selectDriver}</option>
+                      {drivers.map(driver => (
+                        <option key={driver.id} value={driver.id}>{driver.name}</option>
+                      ))}
+                    </select>
+                    <input type="number" placeholder={t.position} value={resultForm.position} onChange={(e) => setResultForm({ ...resultForm, position: e.target.value })} className="px-4 py-2 border rounded-lg" />
+                    <input type="number" placeholder={t.points} value={resultForm.points} onChange={(e) => setResultForm({ ...resultForm, points: e.target.value })} className="px-4 py-2 border rounded-lg" />
+                  </div>
+                  <div className="flex items-center gap-2 mt-4">
+                    <input type="checkbox" checked={resultForm.fastest_lap} onChange={(e) => setResultForm({ ...resultForm, fastest_lap: e.target.checked })} className="w-4 h-4" />
+                    <label>{t.fastestLap}</label>
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    <button onClick={handleResultSubmit} className="px-6 py-2 text-white rounded-lg" style={{ backgroundColor: theme.primary }}>
+                      {editingResult ? t.update : t.add}
+                    </button>
+                    {editingResult && (
+                      <button onClick={() => { setEditingResult(null); setResultForm({ race_id: '', driver_id: '', position: '', points: '', fastest_lap: false }); }} className="px-6 py-2 bg-gray-500 text-white rounded-lg">
+                        {t.cancel}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="bg-white rounded-lg shadow overflow-hidden">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b" style={{ backgroundColor: theme.secondary }}>
+                      <th className="text-left p-4 text-white">{t.race}</th>
+                      <th className="text-left p-4 text-white">{t.driver}</th>
+                      <th className="text-left p-4 text-white">{t.position}</th>
+                      <th className="text-left p-4 text-white">{t.points}</th>
+                      <th className="text-left p-4 text-white">{t.fastestLap}</th>
+                      {canEdit && <th className="text-left p-4 text-white">{t.actions}</th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {results.map(result => {
+                      const race = races.find(r => r.id === result.race_id);
+                      const driver = drivers.find(d => d.id === result.driver_id);
+                      return (
+                        <tr key={result.id} className="border-b">
+                          <td className="p-4">{race?.name || 'N/A'}</td>
+                          <td className="p-4">{driver?.name || 'N/A'}</td>
+                          <td className="p-4">{result.position}</td>
+                          <td className="p-4">{result.points}</td>
+                          <td className="p-4">{result.fastest_lap ? '✅' : '❌'}</td>
+                          {canEdit && (
+                            <td className="p-4">
+                              <div className="flex gap-2">
+                                <button onClick={() => { setEditingResult(result.id); setResultForm({ race_id: result.race_id, driver_id: result.driver_id, position: result.position, points: result.points, fastest_lap: result.fastest_lap }); }} className="text-blue-500">
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                                {isAdmin && (
+                                  <button onClick={async () => {
+                                    if (!window.confirm(t.deleteResultConfirm)) return;
+                                    try {
+                                      const { error } = await supabase.from('results').delete().eq('id', result.id);
+                                      if (error) throw error;
+                                      setResults(results.filter(r => r.id !== result.id));
+                                      alert(t.deleted);
+                                    } catch (error) {
+                                      console.error('Error:', error);
+                                      alert(t.deletionError);
+                                    }
+                                  }} className="text-red-500">
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Standings Tab */}
+          {activeTab === 'standings' && (
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b" style={{ backgroundColor: theme.secondary }}>
+                    <th className="text-left p-4 text-white">{t.position}</th>
+                    <th className="text-left p-4 text-white">{t.driver}</th>
+                    <th className="text-left p-4 text-white">{t.team}</th>
+                    <th className="text-left p-4 text-white">{t.points}</th>
+                    <th className="text-left p-4 text-white">{t.wins}</th>
+                    <th className="text-left p-4 text-white">{t.podiums}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {standings.map((standing, index) => (
+                    <tr key={standing.driver.id} className="border-b hover:bg-gray-50">
+                      <td className="p-4 font-bold">{standing.position}</td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: theme.primary }}>
+                            {standing.driver.number}
+                          </div>
+                          {standing.driver.name}
+                        </div>
+                      </td>
+                      <td className="p-4">{standing.driver.team}</td>
+                      <td className="p-4 font-bold">{standing.totalPoints}</td>
+                      <td className="p-4">{standing.wins}</td>
+                      <td className="p-4">{standing.podiums}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    function ThemeContent() {
+      const [themeForm, setThemeForm] = useState({ ...theme });
+
+      const handleThemeSubmit = () => {
+        saveThemeData(themeForm);
+      };
+
+      return (
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-2xl font-bold mb-6" style={{ color: theme.primary }}>{t.themeSettings}</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium mb-2">{t.appTitle}</label>
+              <input value={themeForm.appTitle} onChange={(e) => setThemeForm({ ...themeForm, appTitle: e.target.value })} className="w-full px-4 py-2 border rounded-lg" />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-2">{t.language}</label>
+              <select value={themeForm.language} onChange={(e) => setThemeForm({ ...themeForm, language: e.target.value })} className="w-full px-4 py-2 border rounded-lg">
+                <option value="it">Italiano</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">{t.primaryColor}</label>
+              <input type="color" value={themeForm.primary} onChange={(e) => setThemeForm({ ...themeForm, primary: e.target.value })} className="w-full h-12 px-2 border rounded-lg" />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">{t.secondaryColor}</label>
+              <input type="color" value={themeForm.secondary} onChange={(e) => setThemeForm({ ...themeForm, secondary: e.target.value })} className="w-full h-12 px-2 border rounded-lg" />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">{t.backgroundColor}</label>
+              <input type="color" value={themeForm.background} onChange={(e) => setThemeForm({ ...themeForm, background: e.target.value })} className="w-full h-12 px-2 border rounded-lg" />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">{t.appLogoUrl}</label>
+              <input value={themeForm.appLogoUrl || ''} onChange={(e) => setThemeForm({ ...themeForm, appLogoUrl: e.target.value })} className="w-full px-4 py-2 border rounded-lg" />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium mb-2">{t.backgroundImageUrl}</label>
+              <input value={themeForm.backgroundImageUrl || ''} onChange={(e) => setThemeForm({ ...themeForm, backgroundImageUrl: e.target.value })} className="w-full px-4 py-2 border rounded-lg" />
+            </div>
+          </div>
+
+          {/* Preview */}
+          <div className="mt-8 p-6 border rounded-lg">
+            <h3 className="text-lg font-bold mb-4">{t.preview}</h3>
+            <div className="flex items-center gap-4 p-4 rounded-lg" style={{ backgroundColor: themeForm.secondary }}>
+              {themeForm.appLogoUrl ? (
+                <img src={themeForm.appLogoUrl} alt="Logo" className="w-8 h-8 object-contain" />
+              ) : (
+                <Trophy className="w-8 h-8" style={{ color: themeForm.primary }} />
+              )}
+              <span className="text-white text-xl font-bold">{themeForm.appTitle}</span>
+            </div>
+            <div className="mt-4 grid grid-cols-3 gap-4">
+              <div className="p-4 rounded-lg text-center text-white" style={{ backgroundColor: themeForm.primary }}>
+                {t.primaryColor}
+              </div>
+              <div className="p-4 rounded-lg text-center text-white" style={{ backgroundColor: themeForm.secondary }}>
+                {t.secondaryColor}
+              </div>
+              <div className="p-4 rounded-lg text-center" style={{ backgroundColor: themeForm.background, color: themeForm.primary }}>
+                {t.backgroundColor}
+              </div>
+            </div>
+          </div>
+
+          <button onClick={handleThemeSubmit} className="mt-6 px-8 py-3 text-white rounded-lg font-semibold" style={{ backgroundColor: theme.primary }}>
+            {t.saveTheme}
+          </button>
+        </div>
+      );
+    }
+  }
+}
