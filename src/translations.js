@@ -5,6 +5,7 @@ export const translations = {
     username: 'Username',
     password: 'Password',
     demoCredentials: 'Credenziali Demo:',
+    invalidCredentials: 'Credenziali non valide',
     
     // Navbar
     back: 'Torna ai Campionati',
@@ -64,6 +65,8 @@ export const translations = {
     driverAlreadyHasResult: 'Questo pilota ha già un risultato in questa gara!',
     resultUpdated: 'Risultato aggiornato!',
     deleteResultConfirm: 'Eliminare questo risultato?',
+    race: 'Gara',
+    driver: 'Pilota',
     
     // Standings
     standingsTitle: 'Classifica Piloti',
@@ -80,7 +83,7 @@ export const translations = {
     backgroundColor: '🎨 Colore Sfondo (login)',
     useDarkColors: 'Usa colori scuri per garantire leggibilità del testo bianco',
     useDarkColorsPrimary: 'Usa colori scuri o vivaci per garantire leggibilità del testo bianco',
-    contrastWarning: 'I colori scelti hanno un contrasto molto basso e potrebbero compromettere la leggibilità. Vuoi procedere comunque?',
+    contrastWarning: '⚠️ ATTENZIONE: I colori scelti hanno un contrasto molto basso e potrebbero compromettere la leggibilità. Vuoi procedere comunque?',
     preview: '👁️ Anteprima con testo bianco:',
     primaryButton: 'Pulsante Primario',
     secondaryNavbar: 'Navbar Secondaria',
@@ -121,6 +124,7 @@ export const translations = {
     username: 'Username',
     password: 'Password',
     demoCredentials: 'Demo Credentials:',
+    invalidCredentials: 'Invalid credentials',
     
     // Navbar
     back: 'Back to Championships',
@@ -180,6 +184,8 @@ export const translations = {
     driverAlreadyHasResult: 'This driver already has a result in this race!',
     resultUpdated: 'Result updated!',
     deleteResultConfirm: 'Delete this result?',
+    race: 'Race',
+    driver: 'Driver',
     
     // Standings
     standingsTitle: 'Driver Standings',
@@ -196,7 +202,7 @@ export const translations = {
     backgroundColor: '🎨 Background Color (login)',
     useDarkColors: 'Use dark colors to ensure white text readability',
     useDarkColorsPrimary: 'Use dark or vivid colors to ensure white text readability',
-    contrastWarning: 'The chosen colors have very low contrast and may compromise readability. Do you want to proceed anyway?',
+    contrastWarning: '⚠️ WARNING: The chosen colors have very low contrast and may compromise readability. Do you want to proceed anyway?',
     preview: '👁️ Preview with white text:',
     primaryButton: 'Primary Button',
     secondaryNavbar: 'Secondary Navbar',
