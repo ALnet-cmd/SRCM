@@ -214,7 +214,7 @@ export default function SimRacingApp() {
       <div className="min-h-screen bg-gray-100">
         <nav className="shadow-lg" style={{ backgroundColor: theme.secondary }}>
           <div className="max-w-7xl mx-auto px-4">
-            <div className="flex justify-between items-center h-16">
+            <div className="flex justify-between items-center h-20">
               <div className="flex items-center gap-4">
                 {theme.appLogoUrl ? (
                   <img src={theme.appLogoUrl} alt="Logo" className="w-8 h-8 object-contain" />
