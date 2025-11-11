@@ -16,7 +16,7 @@ export default function DriversManager({
     name: '', 
     number: '', 
     team: '', 
-    country: ''  // Cambiato da nationality a country
+    country: ''
   });
   const [error, setError] = useState('');
 
@@ -47,7 +47,7 @@ export default function DriversManager({
         name: driverForm.name.trim(),
         number: driverForm.number.trim(),
         team: driverForm.team.trim(),
-        country: driverForm.country.trim() // Usa country invece di nationality
+        country: driverForm.country.trim()
       };
 
       let result;
