@@ -21,6 +21,24 @@ export default function ResultsManager({
   });
   const [error, setError] = useState('');
 
+  // Funzione per verificare se la posizione è già occupata
+  const isPositionTaken = (raceId, position, excludeResultId = null) => {
+    return results.some(result => 
+      result.race_id === parseInt(raceId) && 
+      result.position === position && 
+      result.id !== excludeResultId
+    );
+  };
+
+  // Funzione per verificare se il pilota ha già un risultato in questa gara
+  const hasDriverResultInRace = (raceId, driverId, excludeResultId = null) => {
+    return results.some(result => 
+      result.race_id === parseInt(raceId) && 
+      result.driver_id === parseInt(driverId) && 
+      result.id !== excludeResultId
+    );
+  };
+
   const handleResultSubmit = async () => {
     setError('');
     
@@ -39,6 +57,18 @@ export default function ResultsManager({
     }
     if (!resultForm.points.trim()) {
       setError('I punti sono obbligatori');
+      return;
+    }
+
+    // Validazione posizione duplicata
+    if (isPositionTaken(resultForm.race_id, resultForm.position, editingResult)) {
+      setError(`La posizione ${resultForm.position} è già occupata in questa gara!`);
+      return;
+    }
+
+    // Validazione pilota duplicato nella stessa gara
+    if (hasDriverResultInRace(resultForm.race_id, resultForm.driver_id, editingResult)) {
+      setError('Questo pilota ha già un risultato in questa gara!');
       return;
     }
 
@@ -123,6 +153,19 @@ export default function ResultsManager({
     return race ? race.circuit : 'N/A';
   };
 
+  // Ottieni le posizioni già occupate per la gara selezionata
+  const getTakenPositions = () => {
+    if (!resultForm.race_id) return [];
+    return results
+      .filter(result => 
+        result.race_id === parseInt(resultForm.race_id) && 
+        result.id !== editingResult
+      )
+      .map(result => result.position);
+  };
+
+  const takenPositions = getTakenPositions();
+
   return (
     <div className="space-y-6">
       {canEdit && (
@@ -144,7 +187,7 @@ export default function ResultsManager({
               </label>
               <select 
                 value={resultForm.race_id} 
-                onChange={(e) => setResultForm({ ...resultForm, race_id: e.target.value })} 
+                onChange={(e) => setResultForm({ ...resultForm, race_id: e.target.value, position: '' })} 
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Seleziona una gara</option>
@@ -177,14 +220,25 @@ export default function ResultsManager({
             <div>
               <label className="block text-sm font-medium mb-2 text-gray-700">
                 Posizione *
+                {takenPositions.length > 0 && (
+                  <span className="text-xs text-red-600 ml-2">
+                    Occupate: {takenPositions.join(', ')}
+                  </span>
+                )}
               </label>
               <input 
                 type="number" 
                 placeholder="Es: 1" 
+                min="1"
                 value={resultForm.position} 
                 onChange={(e) => setResultForm({ ...resultForm, position: e.target.value })} 
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
               />
+              {resultForm.position && takenPositions.includes(resultForm.position) && (
+                <p className="text-sm text-red-600 mt-1">
+                  ⚠️ Attenzione: La posizione {resultForm.position} è già occupata in questa gara!
+                </p>
+              )}
             </div>
 
             <div>
@@ -194,6 +248,7 @@ export default function ResultsManager({
               <input 
                 type="number" 
                 placeholder="Es: 25" 
+                min="0"
                 value={resultForm.points} 
                 onChange={(e) => setResultForm({ ...resultForm, points: e.target.value })} 
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
@@ -201,10 +256,23 @@ export default function ResultsManager({
             </div>
           </div>
 
+          {/* Informazioni di validazione */}
+          {resultForm.race_id && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 className="font-semibold text-blue-800 mb-2">Regole di validazione:</h4>
+              <ul className="text-sm text-blue-700 space-y-1">
+                <li>• Non possono esserci due piloti con la stessa posizione nella stessa gara</li>
+                <li>• Un pilota non può avere più di un risultato per gara</li>
+                <li>• Le posizioni devono essere numeri positivi</li>
+              </ul>
+            </div>
+          )}
+
           <div className="flex gap-2 mt-4">
             <button 
               onClick={handleResultSubmit} 
-              className="px-6 py-3 text-white rounded-lg font-semibold transition-colors hover:opacity-90" 
+              disabled={resultForm.position && takenPositions.includes(resultForm.position)}
+              className="px-6 py-3 text-white rounded-lg font-semibold transition-colors hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed" 
               style={{ backgroundColor: theme.primary }}
             >
               {editingResult ? 'Aggiorna' : 'Aggiungi'}
