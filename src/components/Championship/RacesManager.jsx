@@ -12,7 +12,13 @@ export default function RacesManager({
   t
 }) {
   const [editingRace, setEditingRace] = useState(null);
-  const [raceForm, setRaceForm] = useState({ name: '', location: '', date: '', trackImageUrl: '' });
+  const [raceForm, setRaceForm] = useState({ 
+    name: '', 
+    circuit: '',  // Cambiato da location a circuit
+    date: '', 
+    laps: '',     // Aggiunto campo laps
+    trackImageUrl: '' 
+  });
   const [error, setError] = useState('');
 
   const handleRaceSubmit = async () => {
@@ -23,81 +29,74 @@ export default function RacesManager({
       setError('Il nome della gara è obbligatorio');
       return;
     }
-    if (!raceForm.location.trim()) {
-      setError('La location è obbligatoria');
+    if (!raceForm.circuit.trim()) {
+      setError('Il circuito è obbligatorio');
       return;
     }
     if (!raceForm.date) {
       setError('La data è obbligatoria');
       return;
     }
+    if (!raceForm.laps.trim()) {
+      setError('Il numero di giri è obbligatorio');
+      return;
+    }
 
     try {
-      // Formatta la data per il database
-      const formattedDate = new Date(raceForm.date).toISOString();
+      const raceData = {
+        championship_id: championshipId,
+        name: raceForm.name.trim(),
+        circuit: raceForm.circuit.trim(), // Usa circuit invece di location
+        date: raceForm.date, // Mantieni come text come nel database
+        laps: raceForm.laps.trim(),
+        track_image_url: raceForm.trackImageUrl?.trim() || null
+      };
 
+      let result;
       if (editingRace) {
-        const { data, error: updateError } = await supabase
+        result = await supabase
           .from('races')
-          .update({
-            name: raceForm.name.trim(),
-            location: raceForm.location.trim(),
-            date: formattedDate,
-            track_image_url: raceForm.trackImageUrl?.trim() || null
-          })
+          .update(raceData)
           .eq('id', editingRace)
           .select()
           .single();
-
-        if (updateError) {
-          console.error('Supabase update error:', updateError);
-          throw updateError;
-        }
-
-        setRaces(races.map(r => r.id === editingRace ? data : r));
       } else {
-        const { data, error: insertError } = await supabase
+        result = await supabase
           .from('races')
-          .insert({
-            championship_id: championshipId,
-            name: raceForm.name.trim(),
-            location: raceForm.location.trim(),
-            date: formattedDate,
-            track_image_url: raceForm.trackImageUrl?.trim() || null
-          })
+          .insert(raceData)
           .select()
           .single();
+      }
 
-        if (insertError) {
-          console.error('Supabase insert error:', insertError);
-          throw insertError;
-        }
+      if (result.error) throw result.error;
 
-        setRaces([...races, data]);
+      if (editingRace) {
+        setRaces(races.map(r => r.id === editingRace ? result.data : r));
+      } else {
+        setRaces([...races, result.data]);
       }
 
       setEditingRace(null);
-      setRaceForm({ name: '', location: '', date: '', trackImageUrl: '' });
-      alert(t.saved || 'Gara salvata con successo!');
+      setRaceForm({ name: '', circuit: '', date: '', laps: '', trackImageUrl: '' });
+      alert('Gara salvata con successo!');
       
     } catch (error) {
-      console.error('Error saving race:', error);
-      const errorMessage = error.message || 'Errore durante il salvataggio';
-      setError(errorMessage);
-      alert(errorMessage);
+      console.error('Errore:', error);
+      setError(`Errore: ${error.message}`);
+      alert(`Errore: ${error.message}`);
     }
   };
 
   const handleDelete = async (raceId) => {
-    if (!window.confirm(t.deleteRaceConfirm || 'Sei sicuro di voler eliminare questa gara?')) return;
+    if (!window.confirm('Sei sicuro di voler eliminare questa gara?')) return;
     try {
       const { error } = await supabase.from('races').delete().eq('id', raceId);
       if (error) throw error;
       setRaces(races.filter(r => r.id !== raceId));
-      alert(t.deleted || 'Gara eliminata con successo!');
+      alert('Gara eliminata con successo!');
     } catch (error) {
       console.error('Error:', error);
-      alert(t.deletionError || 'Errore durante l\'eliminazione');
+      alert('Errore durante l\'eliminazione');
     }
   };
 
@@ -106,10 +105,9 @@ export default function RacesManager({
       {canEdit && (
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-xl font-bold mb-4" style={{ color: theme.primary }}>
-            {editingRace ? (t.editRace || 'Modifica Gara') : (t.newRace || 'Nuova Gara')}
+            {editingRace ? 'Modifica Gara' : 'Nuova Gara'}
           </h3>
           
-          {/* Messaggio di errore */}
           {error && (
             <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
               {error}
@@ -131,12 +129,12 @@ export default function RacesManager({
             
             <div>
               <label className="block text-sm font-medium mb-2 text-gray-700">
-                Location *
+                Circuito *
               </label>
               <input 
                 placeholder="Es: Monza" 
-                value={raceForm.location} 
-                onChange={(e) => setRaceForm({ ...raceForm, location: e.target.value })} 
+                value={raceForm.circuit} 
+                onChange={(e) => setRaceForm({ ...raceForm, circuit: e.target.value })} 
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
               />
             </div>
@@ -152,8 +150,20 @@ export default function RacesManager({
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
               />
             </div>
-            
+
             <div>
+              <label className="block text-sm font-medium mb-2 text-gray-700">
+                Numero di Giri *
+              </label>
+              <input 
+                placeholder="Es: 53" 
+                value={raceForm.laps} 
+                onChange={(e) => setRaceForm({ ...raceForm, laps: e.target.value })} 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+              />
+            </div>
+            
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium mb-2 text-gray-700">
                 URL Immagine Pista
               </label>
@@ -179,18 +189,18 @@ export default function RacesManager({
               className="px-6 py-3 text-white rounded-lg font-semibold transition-colors hover:opacity-90" 
               style={{ backgroundColor: theme.primary }}
             >
-              {editingRace ? (t.update || 'Aggiorna') : (t.add || 'Aggiungi')}
+              {editingRace ? 'Aggiorna' : 'Aggiungi'}
             </button>
             {editingRace && (
               <button 
                 onClick={() => { 
                   setEditingRace(null); 
-                  setRaceForm({ name: '', location: '', date: '', trackImageUrl: '' }); 
+                  setRaceForm({ name: '', circuit: '', date: '', laps: '', trackImageUrl: '' }); 
                   setError('');
                 }} 
                 className="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold transition-colors hover:bg-gray-600"
               >
-                {t.cancel || 'Annulla'}
+                Annulla
               </button>
             )}
           </div>
@@ -209,10 +219,13 @@ export default function RacesManager({
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
                   <h3 className="font-bold text-lg mb-1">{race.name}</h3>
-                  <p className="text-gray-600 mb-2">{race.location}</p>
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <p className="text-gray-600 mb-2">{race.circuit}</p>
+                  <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
                     <Calendar className="w-4 h-4" />
-                    <span>{new Date(race.date).toLocaleDateString('it-IT')}</span>
+                    <span>{race.date}</span>
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    <strong>Giri:</strong> {race.laps}
                   </div>
                 </div>
                 {canEdit && (
@@ -222,8 +235,9 @@ export default function RacesManager({
                         setEditingRace(race.id); 
                         setRaceForm({ 
                           name: race.name, 
-                          location: race.location, 
-                          date: race.date.split('T')[0], // Formatta per input date
+                          circuit: race.circuit, 
+                          date: race.date,
+                          laps: race.laps,
                           trackImageUrl: race.track_image_url || '' 
                         }); 
                         setError('');
