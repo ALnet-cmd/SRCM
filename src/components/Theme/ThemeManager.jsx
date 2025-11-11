@@ -49,6 +49,21 @@ export default function ThemeManager({ theme, t, saveThemeData }) {
     saveThemeData(themeForm);
   };
 
+  // Funzione per determinare il colore del testo in base allo sfondo
+  const getTextColor = (backgroundColor) => {
+    // Converti il colore esadecimale in RGB
+    const hex = backgroundColor.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // Calcola la luminosità (formula di percezione umana)
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    
+    // Se la luminosità è alta, usa testo nero, altrimenti bianco
+    return brightness > 128 ? '#000000' : '#FFFFFF';
+  };
+
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h2 className="text-2xl font-bold mb-6" style={{ color: theme.primary }}>
@@ -196,7 +211,7 @@ export default function ThemeManager({ theme, t, saveThemeData }) {
           className="flex items-center gap-4 p-4 rounded-lg shadow mb-4"
           style={{ 
             backgroundColor: themeForm.secondary,
-            color: '#FFFFFF'
+            color: getTextColor(themeForm.secondary)
           }}
         >
           {themeForm.appLogoUrl ? (
@@ -213,7 +228,7 @@ export default function ThemeManager({ theme, t, saveThemeData }) {
             className="p-4 rounded-lg text-center font-semibold shadow"
             style={{ 
               backgroundColor: themeForm.primary,
-              color: '#FFFFFF'
+              color: getTextColor(themeForm.primary)
             }}
           >
             {t.primaryColor}
@@ -222,7 +237,7 @@ export default function ThemeManager({ theme, t, saveThemeData }) {
             className="p-4 rounded-lg text-center font-semibold shadow"
             style={{ 
               backgroundColor: themeForm.secondary,
-              color: '#FFFFFF'
+              color: getTextColor(themeForm.secondary)
             }}
           >
             {t.secondaryColor}
@@ -231,7 +246,7 @@ export default function ThemeManager({ theme, t, saveThemeData }) {
             className="p-4 rounded-lg text-center font-semibold shadow border"
             style={{ 
               backgroundColor: themeForm.background,
-              color: themeForm.primary
+              color: getTextColor(themeForm.background)
             }}
           >
             {t.backgroundColor}
@@ -251,7 +266,7 @@ export default function ThemeManager({ theme, t, saveThemeData }) {
             className="mt-2 p-3 rounded text-sm"
             style={{ 
               backgroundColor: themeForm.background,
-              color: themeForm.primary
+              color: getTextColor(themeForm.background)
             }}
           >
             Questo è un esempio di testo sul background
@@ -259,13 +274,16 @@ export default function ThemeManager({ theme, t, saveThemeData }) {
         </div>
       </div>
 
-      {/* Bottone Salva */}
+      {/* Bottone Salva - FISSO CON TESTO BIANCO */}
       <button 
         onClick={handleThemeSubmit} 
-        className="mt-6 px-8 py-3 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all"
-        style={{ backgroundColor: theme.primary }}
+        className="mt-6 px-8 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+        style={{ 
+          backgroundColor: theme.primary,
+          color: '#FFFFFF' // Testo sempre bianco per massima leggibilità
+        }}
       >
-        {t.saveTheme}
+        {t.saveTheme || "Salva Tema"}
       </button>
     </div>
   );
