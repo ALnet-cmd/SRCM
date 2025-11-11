@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Edit, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Edit, Trash2, Calculator } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 
 export default function ResultsManager({
@@ -10,7 +10,8 @@ export default function ResultsManager({
   canEdit,
   isAdmin,
   theme,
-  t
+  t,
+  championship
 }) {
   const [editingResult, setEditingResult] = useState(null);
   const [resultForm, setResultForm] = useState({ 
@@ -18,9 +19,51 @@ export default function ResultsManager({
     driver_id: '', 
     position: '', 
     points: '',
-    fastest_lap: false
+    fastest_lap: false,
+    finished: true
   });
   const [error, setError] = useState('');
+  const [pointSystem, setPointSystem] = useState(null);
+  const [calculating, setCalculating] = useState(false);
+
+  // Carica il sistema di punteggio del campionato
+  useEffect(() => {
+    if (championship?.point_system_id) {
+      loadPointSystem();
+    }
+  }, [championship]);
+
+  const loadPointSystem = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('point_systems')
+        .select('*')
+        .eq('id', championship.point_system_id)
+        .single();
+      
+      if (error) throw error;
+      setPointSystem(data);
+    } catch (error) {
+      console.error('Error loading point system:', error);
+    }
+  };
+
+  // Calcola i punti automaticamente in base a posizione e sistema punteggio
+  const calculatePoints = (position, finished, fastest_lap) => {
+    if (!finished) return '0'; // Chi non finisce = 0 punti
+    
+    let points = 0;
+    
+    // Punti dalla posizione secondo il sistema
+    if (pointSystem?.points && pointSystem.points[position]) {
+      points += parseInt(pointSystem.points[position]) || 0;
+    }
+    
+    // +1 punto per chi finisce la gara (indipendentemente dalla posizione)
+    points += 1;
+    
+    return points.toString();
+  };
 
   // Funzione per verificare se la posizione è già occupata
   const isPositionTaken = (raceId, position, excludeResultId = null) => {
@@ -65,10 +108,6 @@ export default function ResultsManager({
       setError('La posizione è obbligatoria');
       return;
     }
-    if (!resultForm.points.trim()) {
-      setError('I punti sono obbligatori');
-      return;
-    }
 
     // Validazione posizione duplicata
     if (isPositionTaken(resultForm.race_id, resultForm.position, editingResult)) {
@@ -89,11 +128,18 @@ export default function ResultsManager({
     }
 
     try {
+      // Calcola automaticamente i punti
+      const calculatedPoints = calculatePoints(
+        resultForm.position, 
+        resultForm.finished, 
+        resultForm.fastest_lap
+      );
+
       const resultData = {
         race_id: resultForm.race_id,
         driver_id: resultForm.driver_id,
         position: resultForm.position.trim(),
-        points: resultForm.points.trim(),
+        points: calculatedPoints,
         fastest_lap: resultForm.fastest_lap
       };
 
@@ -122,7 +168,7 @@ export default function ResultsManager({
       }
 
       setEditingResult(null);
-      setResultForm({ race_id: '', driver_id: '', position: '', points: '', fastest_lap: false });
+      setResultForm({ race_id: '', driver_id: '', position: '', points: '', fastest_lap: false, finished: true });
       alert('Risultato salvato con successo!');
       
     } catch (error) {
@@ -144,6 +190,20 @@ export default function ResultsManager({
       alert('Errore durante l\'eliminazione');
     }
   };
+
+  // Calcola automaticamente i punti quando cambiano posizione o finished
+  useEffect(() => {
+    if (resultForm.position && pointSystem) {
+      setCalculating(true);
+      const calculatedPoints = calculatePoints(
+        resultForm.position, 
+        resultForm.finished, 
+        resultForm.fastest_lap
+      );
+      setResultForm(prev => ({ ...prev, points: calculatedPoints }));
+      setTimeout(() => setCalculating(false), 300);
+    }
+  }, [resultForm.position, resultForm.finished, resultForm.fastest_lap, pointSystem]);
 
   const getDriverName = (driverId) => {
     const driver = drivers.find(d => d.id === driverId);
@@ -201,6 +261,26 @@ export default function ResultsManager({
           {error && (
             <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
               {error}
+            </div>
+          )}
+
+          {/* Info Sistema Punteggio */}
+          {pointSystem && (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center gap-2 text-sm text-blue-800">
+                <Calculator className="w-4 h-4" />
+                <div>
+                  <strong>Sistema punteggio:</strong> {pointSystem.name}
+                  {pointSystem.points && (
+                    <span className="ml-2 text-xs">
+                      ({Object.entries(pointSystem.points).slice(0, 3).map(([pos, pts]) => `${pos}°:${pts}p`).join(', ')}...)
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="text-xs text-blue-700 mt-1">
+                +1 punto aggiuntivo per chi finisce la gara
+              </div>
             </div>
           )}
 
@@ -267,21 +347,40 @@ export default function ResultsManager({
 
             <div>
               <label className="block text-sm font-medium mb-2 text-gray-700">
-                Punti *
+                Punti {calculating && <span className="text-blue-600">(calcolando...)</span>}
               </label>
               <input 
                 type="number" 
-                placeholder="Es: 25" 
-                min="0"
+                readOnly
                 value={resultForm.points} 
-                onChange={(e) => setResultForm({ ...resultForm, points: e.target.value })} 
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 font-mono" 
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Calcolo automatico basato su posizione e sistema punteggio
+              </p>
             </div>
           </div>
 
-          {/* Campo Giro più veloce */}
-          <div className="mt-4">
+          {/* Opzioni aggiuntive */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border">
+              <input 
+                type="checkbox" 
+                checked={resultForm.finished} 
+                onChange={(e) => setResultForm({ ...resultForm, finished: e.target.checked })} 
+                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                id="finished"
+              />
+              <div>
+                <label htmlFor="finished" className="text-sm font-medium text-gray-700">
+                  Pilota ha finito la gara
+                </label>
+                <p className="text-xs text-gray-500">
+                  {resultForm.finished ? '+1 punto aggiuntivo' : '0 punti (ritirato)'}
+                </p>
+              </div>
+            </div>
+
             <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border">
               <input 
                 type="checkbox" 
@@ -293,34 +392,16 @@ export default function ResultsManager({
               />
               <div className="flex-1">
                 <label htmlFor="fastest_lap" className="text-sm font-medium text-gray-700">
-                  Giro più veloce della gara
+                  Giro più veloce
                 </label>
                 {existingFastestLap && !resultForm.fastest_lap && (
                   <p className="text-xs text-orange-600 mt-1">
-                    ⚠️ C'è già un giro più veloce registrato in questa gara
-                  </p>
-                )}
-                {resultForm.fastest_lap && (
-                  <p className="text-xs text-green-600 mt-1">
-                    ✅ Questo pilota avrà il giro più veloce
+                    ⚠️ C'è già un giro più veloce in questa gara
                   </p>
                 )}
               </div>
             </div>
           </div>
-
-          {/* Informazioni di validazione */}
-          {resultForm.race_id && (
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <h4 className="font-semibold text-blue-800 mb-2">Regole di validazione:</h4>
-              <ul className="text-sm text-blue-700 space-y-1">
-                <li>• Non possono esserci due piloti con la stessa posizione nella stessa gara</li>
-                <li>• Un pilota non può avere più di un risultato per gara</li>
-                <li>• Può esserci solo un giro più veloce per gara</li>
-                <li>• Le posizioni devono essere numeri positivi</li>
-              </ul>
-            </div>
-          )}
 
           <div className="flex gap-2 mt-4">
             <button 
@@ -338,7 +419,7 @@ export default function ResultsManager({
               <button 
                 onClick={() => { 
                   setEditingResult(null); 
-                  setResultForm({ race_id: '', driver_id: '', position: '', points: '', fastest_lap: false }); 
+                  setResultForm({ race_id: '', driver_id: '', position: '', points: '', fastest_lap: false, finished: true }); 
                   setError('');
                 }} 
                 className="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold transition-colors hover:bg-gray-600"
@@ -350,6 +431,7 @@ export default function ResultsManager({
         </div>
       )}
 
+      {/* Tabella Risultati */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -406,7 +488,8 @@ export default function ResultsManager({
                               driver_id: result.driver_id, 
                               position: result.position, 
                               points: result.points,
-                              fastest_lap: result.fastest_lap
+                              fastest_lap: result.fastest_lap,
+                              finished: parseInt(result.points) > 0 // Se ha punti, ha finito
                             }); 
                           }} 
                           className="text-blue-500 hover:text-blue-700 transition p-1"
