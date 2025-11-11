@@ -127,6 +127,7 @@ export default function SimRacingApp() {
               theme={theme} 
               t={t} 
               saveThemeData={saveThemeData} 
+              onBack={() => setActiveTab('')}
             /> : 
             <ChampionshipsList 
               championships={championships}
@@ -152,6 +153,7 @@ export default function SimRacingApp() {
             isAdmin={user.role === 'admin'}
             theme={theme}
             t={t}
+            setSelectedChampionship={setSelectedChampionship}
           />
         )}
       </div>
