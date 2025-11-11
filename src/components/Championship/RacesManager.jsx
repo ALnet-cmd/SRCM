@@ -14,9 +14,9 @@ export default function RacesManager({
   const [editingRace, setEditingRace] = useState(null);
   const [raceForm, setRaceForm] = useState({ 
     name: '', 
-    circuit: '',  // Cambiato da location a circuit
+    circuit: '',
     date: '', 
-    laps: '',     // Aggiunto campo laps
+    laps: '',
     trackImageUrl: '' 
   });
   const [error, setError] = useState('');
@@ -46,10 +46,10 @@ export default function RacesManager({
       const raceData = {
         championship_id: championshipId,
         name: raceForm.name.trim(),
-        circuit: raceForm.circuit.trim(), // Usa circuit invece di location
-        date: raceForm.date, // Mantieni come text come nel database
+        circuit: raceForm.circuit.trim(),
+        date: raceForm.date,
         laps: raceForm.laps.trim(),
-        track_image_url: raceForm.trackImageUrl?.trim() || null
+        track_image: raceForm.trackImageUrl?.trim() || null
       };
 
       let result;
@@ -210,9 +210,9 @@ export default function RacesManager({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {races.map(race => (
           <div key={race.id} className="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition">
-            {race.track_image_url && (
+            {race.track_image && (
               <div className="h-32 overflow-hidden">
-                <img src={race.track_image_url} alt={race.name} className="w-full h-full object-cover" />
+                <img src={race.track_image} alt={race.name} className="w-full h-full object-cover" />
               </div>
             )}
             <div className="p-6">
@@ -238,7 +238,7 @@ export default function RacesManager({
                           circuit: race.circuit, 
                           date: race.date,
                           laps: race.laps,
-                          trackImageUrl: race.track_image_url || '' 
+                          trackImageUrl: race.track_image || '' 
                         }); 
                         setError('');
                       }} 
