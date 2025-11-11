@@ -103,9 +103,24 @@ export default function ResultsManager({
     return driver ? driver.name : 'N/A';
   };
 
+  const getDriverNumber = (driverId) => {
+    const driver = drivers.find(d => d.id === driverId);
+    return driver ? driver.number : '';
+  };
+
+  const getDriverTeam = (driverId) => {
+    const driver = drivers.find(d => d.id === driverId);
+    return driver ? driver.team : '';
+  };
+
   const getRaceName = (raceId) => {
     const race = races.find(r => r.id === raceId);
     return race ? race.name : 'N/A';
+  };
+
+  const getRaceCircuit = (raceId) => {
+    const race = races.find(r => r.id === raceId);
+    return race ? race.circuit : 'N/A';
   };
 
   return (
@@ -134,7 +149,9 @@ export default function ResultsManager({
               >
                 <option value="">Seleziona una gara</option>
                 {races.map(race => (
-                  <option key={race.id} value={race.id}>{race.name} - {race.circuit}</option>
+                  <option key={race.id} value={race.id}>
+                    {race.name} - {race.circuit}
+                  </option>
                 ))}
               </select>
             </div>
@@ -214,8 +231,10 @@ export default function ResultsManager({
             <thead>
               <tr className="border-b" style={{ backgroundColor: theme.secondary }}>
                 <th className="text-left p-4 text-white font-semibold">Gara</th>
+                <th className="text-left p-4 text-white font-semibold">Circuito</th>
                 <th className="text-left p-4 text-white font-semibold">Pilota</th>
-                <th className="text-left p-4 text-white font-semibold">Posizione</th>
+                <th className="text-left p-4 text-white font-semibold">Team</th>
+                <th className="text-left p-4 text-white font-semibold">Pos</th>
                 <th className="text-left p-4 text-white font-semibold">Punti</th>
                 {canEdit && <th className="text-left p-4 text-white font-semibold">Azioni</th>}
               </tr>
@@ -223,10 +242,22 @@ export default function ResultsManager({
             <tbody>
               {results.map(result => (
                 <tr key={result.id} className="border-b hover:bg-gray-50 transition">
-                  <td className="p-4">{getRaceName(result.race_id)}</td>
-                  <td className="p-4">{getDriverName(result.driver_id)}</td>
-                  <td className="p-4 font-semibold">{result.position}</td>
-                  <td className="p-4 font-semibold" style={{ color: theme.primary }}>
+                  <td className="p-4 font-medium">{getRaceName(result.race_id)}</td>
+                  <td className="p-4 text-gray-600">{getRaceCircuit(result.race_id)}</td>
+                  <td className="p-4">
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                        style={{ backgroundColor: theme.primary }}
+                      >
+                        {getDriverNumber(result.driver_id)}
+                      </div>
+                      <span>{getDriverName(result.driver_id)}</span>
+                    </div>
+                  </td>
+                  <td className="p-4 text-gray-600">{getDriverTeam(result.driver_id)}</td>
+                  <td className="p-4 font-semibold text-center">{result.position}</td>
+                  <td className="p-4 font-semibold text-center" style={{ color: theme.primary }}>
                     {result.points}
                   </td>
                   {canEdit && (
