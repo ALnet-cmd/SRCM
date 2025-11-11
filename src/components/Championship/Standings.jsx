@@ -37,6 +37,11 @@ export default function Standings({ drivers, results, theme, t }) {
           driverStanding.podiums++;
         }
         
+        // Giri veloci
+        if (result.fastest_lap) {
+          driverStanding.fastestLaps++;
+        }
+        
         // Gare completate (posizioni valide)
         if (position > 0) {
           driverStanding.racesCompleted++;
@@ -80,6 +85,7 @@ export default function Standings({ drivers, results, theme, t }) {
                 Vittorie
               </th>
               <th className="text-left p-4 text-white font-semibold">Podi</th>
+              <th className="text-left p-4 text-white font-semibold">GV</th>
               <th className="text-left p-4 text-white font-semibold">Gare</th>
             </tr>
           </thead>
@@ -128,6 +134,14 @@ export default function Standings({ drivers, results, theme, t }) {
                   <span className="font-semibold">{standing.podiums}</span>
                 </td>
                 <td className="p-4">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold">{standing.fastestLaps}</span>
+                    {standing.fastestLaps > 0 && (
+                      <span className="text-green-600 text-sm" title="Giri veloci">★</span>
+                    )}
+                  </div>
+                </td>
+                <td className="p-4">
                   <span className="font-semibold">{standing.racesCompleted}</span>
                 </td>
               </tr>
@@ -154,6 +168,9 @@ export default function Standings({ drivers, results, theme, t }) {
             </div>
             <div>
               <strong>Risultati totali:</strong> {results.length}
+            </div>
+            <div>
+              <strong>Giri veloci totali:</strong> {results.filter(r => r.fastest_lap).length}
             </div>
           </div>
         </div>
