@@ -10,30 +10,30 @@ export default function ThemeManager({ theme, t, saveThemeData, onBack }) {
   const f1Palettes = [
     {
       name: "Ferrari",
-      primary: "#DC0000", // Rosso Ferrari
-      secondary: "#FFD700", // Giallo
-      background: "#060000", // Nero intenso
+      primary: "#DC0000",
+      secondary: "#FFD700", 
+      background: "#060000",
       textColor: "#FFFFFF"
     },
     {
       name: "Mercedes",
-      primary: "#00D2BE", // Verde acqua Mercedes
-      secondary: "#000000", // Nero
-      background: "#1E1E1E", // Grigio scuro
+      primary: "#00D2BE",
+      secondary: "#000000",
+      background: "#1E1E1E",
       textColor: "#FFFFFF"
     },
     {
       name: "Red Bull",
-      primary: "#0600EF", // Blu Red Bull
-      secondary: "#FF0000", // Rosso
-      background: "#0C0C0C", // Nero
+      primary: "#0600EF",
+      secondary: "#FF0000",
+      background: "#0C0C0C", 
       textColor: "#FFFFFF"
     },
     {
       name: "McLaren",
-      primary: "#FF8700", // Arancione McLaren
-      secondary: "#47C7FC", // Blu
-      background: "#F0F0F0", // Bianco/grigio chiaro
+      primary: "#FF8700",
+      secondary: "#47C7FC",
+      background: "#F0F0F0",
       textColor: "#000000"
     }
   ];
@@ -48,10 +48,17 @@ export default function ThemeManager({ theme, t, saveThemeData, onBack }) {
   };
 
   const handleThemeSubmit = () => {
+    // Avvisa se il logo è un blob URL temporaneo
+    if (themeForm.appLogoUrl && themeForm.appLogoUrl.startsWith('blob:')) {
+      if (!window.confirm('Il logo è un file locale temporaneo. Per mantenerlo permanentemente, usa un URL esterno o caricalo su un servizio di hosting. Vuoi procedere comunque?')) {
+        return;
+      }
+    }
+    
     saveThemeData(themeForm);
   };
 
-  // Funzione per determinare il colore del testo in base allo sfondo
+  // Funzione per determinare il colore del testo
   const getTextColor = (backgroundColor) => {
     const hex = backgroundColor.replace('#', '');
     const r = parseInt(hex.substr(0, 2), 16);
@@ -61,18 +68,16 @@ export default function ThemeManager({ theme, t, saveThemeData, onBack }) {
     return brightness > 128 ? '#000000' : '#FFFFFF';
   };
 
-  // Funzione per gestire l'upload del file
+  // Funzione per gestire l'upload del file (solo anteprima locale)
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    // Controlla il tipo di file
     if (!file.type.startsWith('image/')) {
       alert('Per favore seleziona solo file immagine (JPG, PNG, GIF, etc.)');
       return;
     }
 
-    // Controlla la dimensione del file (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert('Il file è troppo grande. Dimensione massima: 5MB');
       return;
@@ -84,20 +89,17 @@ export default function ThemeManager({ theme, t, saveThemeData, onBack }) {
       // Crea un URL temporaneo per l'anteprima
       const objectUrl = URL.createObjectURL(file);
       
-      // Simula l'upload (in un'app reale qui faresti l'upload al server)
-      // Per ora usiamo l'URL temporaneo come appLogoUrl
-      setTimeout(() => {
-        setThemeForm({
-          ...themeForm,
-          appLogoUrl: objectUrl
-        });
-        setUploading(false);
-        alert('Logo caricato con successo! Ricorda di salvare il tema per applicare le modifiche.');
-      }, 1000);
-
+      setThemeForm({
+        ...themeForm,
+        appLogoUrl: objectUrl
+      });
+      
+      alert('Logo caricato in anteprima! Ricorda che questo è un file temporaneo. Per un logo permanente, usa un URL esterno o carica il file su un servizio di hosting come Imgur, Cloudinary, etc.');
+      
     } catch (error) {
       console.error('Errore durante il caricamento:', error);
       alert('Errore durante il caricamento del logo');
+    } finally {
       setUploading(false);
     }
   };
@@ -113,7 +115,6 @@ export default function ThemeManager({ theme, t, saveThemeData, onBack }) {
     });
   };
 
-  // Funzione per triggerare il click sull'input file
   const triggerFileInput = () => {
     fileInputRef.current?.click();
   };
@@ -249,7 +250,6 @@ export default function ThemeManager({ theme, t, saveThemeData, onBack }) {
         <div className="md:col-span-2">
           <label className="block text-sm font-medium mb-2">Logo dell'App</label>
           
-          {/* Input file nascosto */}
           <input
             type="file"
             ref={fileInputRef}
@@ -267,7 +267,7 @@ export default function ThemeManager({ theme, t, saveThemeData, onBack }) {
               className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors disabled:opacity-50"
             >
               <Upload className="w-5 h-5" />
-              {uploading ? 'Caricamento...' : 'Clicca per caricare un logo'}
+              {uploading ? 'Caricamento...' : 'Carica logo (anteprima locale)'}
             </button>
 
             {/* Anteprima Logo */}
@@ -281,9 +281,13 @@ export default function ThemeManager({ theme, t, saveThemeData, onBack }) {
                   />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium">Logo caricato</p>
+                  <p className="text-sm font-medium">
+                    {themeForm.appLogoUrl.startsWith('blob:') ? 'Logo temporaneo (file locale)' : 'Logo da URL'}
+                  </p>
                   <p className="text-xs text-gray-500">
-                    {themeForm.appLogoUrl.startsWith('blob:') ? 'File locale' : 'URL esterno'}
+                    {themeForm.appLogoUrl.startsWith('blob:') 
+                      ? 'Questo logo è temporaneo e potrebbe non funzionare dopo il ricaricamento' 
+                      : 'Logo permanente da URL esterno'}
                   </p>
                 </div>
                 <button
@@ -298,13 +302,16 @@ export default function ThemeManager({ theme, t, saveThemeData, onBack }) {
 
             {/* Input URL alternativo */}
             <div>
-              <label className="block text-sm font-medium mb-2">Oppure inserisci URL logo</label>
+              <label className="block text-sm font-medium mb-2">URL logo permanente (consigliato)</label>
               <input 
                 value={themeForm.appLogoUrl || ''} 
                 onChange={(e) => setThemeForm({ ...themeForm, appLogoUrl: e.target.value })} 
                 className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
                 placeholder="https://example.com/logo.png"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Per un logo permanente, carica l'immagine su servizi come Imgur, Cloudinary, Google Drive (condivisione pubblica), etc.
+              </p>
             </div>
           </div>
         </div>
@@ -368,26 +375,6 @@ export default function ThemeManager({ theme, t, saveThemeData, onBack }) {
             }}
           >
             {t.backgroundColor}
-          </div>
-        </div>
-
-        {/* Preview Text Legibility */}
-        <div className="mt-4 p-4 rounded-lg border">
-          <h4 className="font-semibold mb-2">Test di leggibilità</h4>
-          <p className="text-sm" style={{ color: themeForm.primary }}>
-            Questo testo usa il colore primario
-          </p>
-          <p className="text-sm mt-1" style={{ color: themeForm.secondary }}>
-            Questo testo usa il colore secondario
-          </p>
-          <div 
-            className="mt-2 p-3 rounded text-sm"
-            style={{ 
-              backgroundColor: themeForm.background,
-              color: getTextColor(themeForm.background)
-            }}
-          >
-            Questo è un esempio di testo sul background
           </div>
         </div>
       </div>
