@@ -1,13 +1,13 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { ChampionshipContext } from '../context/ChampionshipContext'; // PERCORSO CORRETTO
+import { useChampionship } from '../../context/ChampionshipContext';
 import RaceResults from '../RaceResults';
-import { getChampionshipById } from '../services/championshipService';
+import { getChampionshipById } from '../../services/championshipService';
 import './ChampionshipDetail.css';
 
 const ChampionshipDetail = () => {
   const { id } = useParams();
-  const { championships } = useContext(ChampionshipContext);
+  const { championships } = useChampionship();
   const [championship, setChampionship] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -113,7 +113,6 @@ const ChampionshipDetail = () => {
         </div>
       </div>
 
-      {/* Passa tutte le informazioni necessarie al componente RaceResults */}
       <div className="race-results-section">
         <h2>Race Results</h2>
         <RaceResults
@@ -124,7 +123,6 @@ const ChampionshipDetail = () => {
         />
       </div>
 
-      {/* Sezione per la classifica del campionato */}
       <div className="standings-section">
         <h2>Championship Standings</h2>
         <p>Overall standings will be displayed here based on race results.</p>
