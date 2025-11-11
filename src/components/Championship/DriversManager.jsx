@@ -67,35 +67,35 @@ export default function DriversManager({
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input 
-              placeholder={t.driverName} 
+              placeholder="Nome pilota" 
               value={driverForm.name} 
               onChange={(e) => setDriverForm({ ...driverForm, name: e.target.value })} 
-              className="px-4 py-2 border rounded-lg" 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
             />
             <input 
-              placeholder={t.driverNumber} 
+              placeholder="Numero" 
               type="number" 
               value={driverForm.number} 
               onChange={(e) => setDriverForm({ ...driverForm, number: e.target.value })} 
-              className="px-4 py-2 border rounded-lg" 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
             />
             <input 
-              placeholder={t.team} 
+              placeholder="Team" 
               value={driverForm.team} 
               onChange={(e) => setDriverForm({ ...driverForm, team: e.target.value })} 
-              className="px-4 py-2 border rounded-lg" 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
             />
             <input 
-              placeholder={t.nationality} 
+              placeholder="Nazionalità" 
               value={driverForm.nationality} 
               onChange={(e) => setDriverForm({ ...driverForm, nationality: e.target.value })} 
-              className="px-4 py-2 border rounded-lg" 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
             />
           </div>
           <div className="flex gap-2 mt-4">
             <button 
               onClick={handleDriverSubmit} 
-              className="px-6 py-2 text-white rounded-lg" 
+              className="px-6 py-3 text-white rounded-lg font-semibold transition-colors" 
               style={{ backgroundColor: theme.primary }}
             >
               {editingDriver ? t.update : t.add}
@@ -106,7 +106,7 @@ export default function DriversManager({
                   setEditingDriver(null); 
                   setDriverForm({ name: '', number: '', team: '', nationality: '' }); 
                 }} 
-                className="px-6 py-2 bg-gray-500 text-white rounded-lg"
+                className="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold transition-colors"
               >
                 {t.cancel}
               </button>
@@ -117,7 +117,7 @@ export default function DriversManager({
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {drivers.map(driver => (
-          <div key={driver.id} className="bg-white rounded-lg shadow p-6">
+          <div key={driver.id} className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-3">
                 <div 
@@ -143,14 +143,14 @@ export default function DriversManager({
                         nationality: driver.nationality 
                       }); 
                     }} 
-                    className="text-blue-500 hover:text-blue-700 transition"
+                    className="text-blue-500 hover:text-blue-700 transition p-1"
                   >
                     <Edit className="w-4 h-4" />
                   </button>
                   {isAdmin && (
                     <button 
                       onClick={() => handleDelete(driver.id)} 
-                      className="text-red-500 hover:text-red-700 transition"
+                      className="text-red-500 hover:text-red-700 transition p-1"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -159,7 +159,7 @@ export default function DriversManager({
               )}
             </div>
             <div className="text-sm text-gray-500">
-              <p>{t.nationality}: {driver.nationality}</p>
+              <p>Nazionalità: {driver.nationality}</p>
             </div>
           </div>
         ))}
