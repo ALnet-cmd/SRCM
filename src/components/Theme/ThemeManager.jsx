@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Trophy, Palette } from 'lucide-react';
+import { Trophy, Palette, ArrowLeft } from 'lucide-react';
 
-export default function ThemeManager({ theme, t, saveThemeData }) {
+export default function ThemeManager({ theme, t, saveThemeData, onBack }) {
   const [themeForm, setThemeForm] = useState({ ...theme });
 
   // Palette scuderie F1
@@ -66,10 +66,20 @@ export default function ThemeManager({ theme, t, saveThemeData }) {
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-2xl font-bold mb-6" style={{ color: theme.primary }}>
-        <Palette className="w-6 h-6 inline mr-2" />
-        {t.themeSettings}
-      </h2>
+      {/* Header con pulsante back */}
+      <div className="flex items-center gap-4 mb-6">
+        <button 
+          onClick={onBack}
+          className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition shadow"
+          title="Torna ai campionati"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <h2 className="text-2xl font-bold" style={{ color: theme.primary }}>
+          <Palette className="w-6 h-6 inline mr-2" />
+          {t.themeSettings}
+        </h2>
+      </div>
       
       {/* Sezione Palette F1 */}
       <div className="mb-8">
@@ -274,13 +284,13 @@ export default function ThemeManager({ theme, t, saveThemeData }) {
         </div>
       </div>
 
-      {/* Bottone Salva - FISSO CON TESTO BIANCO */}
+      {/* Bottone Salva */}
       <button 
         onClick={handleThemeSubmit} 
         className="mt-6 px-8 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all"
         style={{ 
           backgroundColor: theme.primary,
-          color: '#FFFFFF' // Testo sempre bianco per massima leggibilità
+          color: '#FFFFFF'
         }}
       >
         {t.saveTheme || "Salva Tema"}
