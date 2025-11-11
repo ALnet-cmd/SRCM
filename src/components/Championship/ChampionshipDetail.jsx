@@ -18,7 +18,8 @@ export default function ChampionshipDetail({
   canEdit,
   isAdmin,
   theme,
-  t
+  t,
+  setSelectedChampionship
 }) {
   const tabs = [
     { id: 'drivers', label: t.drivers },
@@ -71,6 +72,7 @@ export default function ChampionshipDetail({
           <Standings
             drivers={drivers}
             results={results}
+            races={races}
             theme={theme}
             t={t}
           />
