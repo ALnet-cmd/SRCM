@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { Trophy, Palette, ArrowLeft } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Trophy, Palette, ArrowLeft, Upload, X } from 'lucide-react';
 
 export default function ThemeManager({ theme, t, saveThemeData, onBack }) {
   const [themeForm, setThemeForm] = useState({ ...theme });
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   // Palette scuderie F1
   const f1Palettes = [
@@ -51,17 +53,69 @@ export default function ThemeManager({ theme, t, saveThemeData, onBack }) {
 
   // Funzione per determinare il colore del testo in base allo sfondo
   const getTextColor = (backgroundColor) => {
-    // Converti il colore esadecimale in RGB
     const hex = backgroundColor.replace('#', '');
     const r = parseInt(hex.substr(0, 2), 16);
     const g = parseInt(hex.substr(2, 2), 16);
     const b = parseInt(hex.substr(4, 2), 16);
-    
-    // Calcola la luminosità (formula di percezione umana)
     const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-    
-    // Se la luminosità è alta, usa testo nero, altrimenti bianco
     return brightness > 128 ? '#000000' : '#FFFFFF';
+  };
+
+  // Funzione per gestire l'upload del file
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Controlla il tipo di file
+    if (!file.type.startsWith('image/')) {
+      alert('Per favore seleziona solo file immagine (JPG, PNG, GIF, etc.)');
+      return;
+    }
+
+    // Controlla la dimensione del file (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Il file è troppo grande. Dimensione massima: 5MB');
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      // Crea un URL temporaneo per l'anteprima
+      const objectUrl = URL.createObjectURL(file);
+      
+      // Simula l'upload (in un'app reale qui faresti l'upload al server)
+      // Per ora usiamo l'URL temporaneo come appLogoUrl
+      setTimeout(() => {
+        setThemeForm({
+          ...themeForm,
+          appLogoUrl: objectUrl
+        });
+        setUploading(false);
+        alert('Logo caricato con successo! Ricorda di salvare il tema per applicare le modifiche.');
+      }, 1000);
+
+    } catch (error) {
+      console.error('Errore durante il caricamento:', error);
+      alert('Errore durante il caricamento del logo');
+      setUploading(false);
+    }
+  };
+
+  // Funzione per rimuovere il logo
+  const removeLogo = () => {
+    if (themeForm.appLogoUrl && themeForm.appLogoUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(themeForm.appLogoUrl);
+    }
+    setThemeForm({
+      ...themeForm,
+      appLogoUrl: null
+    });
+  };
+
+  // Funzione per triggerare il click sull'input file
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   return (
@@ -191,14 +245,68 @@ export default function ThemeManager({ theme, t, saveThemeData, onBack }) {
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-2">{t.appLogoUrl}</label>
-          <input 
-            value={themeForm.appLogoUrl || ''} 
-            onChange={(e) => setThemeForm({ ...themeForm, appLogoUrl: e.target.value })} 
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
-            placeholder="https://example.com/logo.png"
+        {/* Sezione Upload Logo */}
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium mb-2">Logo dell'App</label>
+          
+          {/* Input file nascosto */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+            accept="image/*"
+            className="hidden"
           />
+          
+          <div className="flex flex-col gap-4">
+            {/* Pulsante Upload */}
+            <button
+              type="button"
+              onClick={triggerFileInput}
+              disabled={uploading}
+              className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors disabled:opacity-50"
+            >
+              <Upload className="w-5 h-5" />
+              {uploading ? 'Caricamento...' : 'Clicca per caricare un logo'}
+            </button>
+
+            {/* Anteprima Logo */}
+            {themeForm.appLogoUrl && (
+              <div className="flex items-center gap-4 p-4 border rounded-lg bg-gray-50">
+                <div className="flex-shrink-0">
+                  <img 
+                    src={themeForm.appLogoUrl} 
+                    alt="Logo anteprima" 
+                    className="w-16 h-16 object-contain rounded"
+                  />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Logo caricato</p>
+                  <p className="text-xs text-gray-500">
+                    {themeForm.appLogoUrl.startsWith('blob:') ? 'File locale' : 'URL esterno'}
+                  </p>
+                </div>
+                <button
+                  onClick={removeLogo}
+                  className="p-2 text-red-500 hover:text-red-700 transition-colors"
+                  title="Rimuovi logo"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            )}
+
+            {/* Input URL alternativo */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Oppure inserisci URL logo</label>
+              <input 
+                value={themeForm.appLogoUrl || ''} 
+                onChange={(e) => setThemeForm({ ...themeForm, appLogoUrl: e.target.value })} 
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                placeholder="https://example.com/logo.png"
+              />
+            </div>
+          </div>
         </div>
 
         <div className="md:col-span-2">
