@@ -10,6 +10,11 @@ export function useChampionshipData(selectedChampionship) {
   useEffect(() => {
     if (selectedChampionship) {
       loadChampionshipData(selectedChampionship.id);
+    } else {
+      // Reset dati quando non c'è un campionato selezionato
+      setDrivers([]);
+      setRaces([]);
+      setResults([]);
     }
   }, [selectedChampionship]);
 
@@ -17,29 +22,35 @@ export function useChampionshipData(selectedChampionship) {
     setLoading(true);
     try {
       // Carica drivers
-      const { data: driversData } = await supabase
+      const { data: driversData, error: driversError } = await supabase
         .from('drivers')
         .select('*')
         .eq('championship_id', championshipId)
         .order('number');
+      
+      if (driversError) throw driversError;
       if (driversData) setDrivers(driversData);
 
       // Carica races
-      const { data: racesData } = await supabase
+      const { data: racesData, error: racesError } = await supabase
         .from('races')
         .select('*')
         .eq('championship_id', championshipId)
         .order('date');
+      
+      if (racesError) throw racesError;
       if (racesData) setRaces(racesData);
 
       // Carica results
       const raceIds = racesData?.map(r => r.id) || [];
       if (raceIds.length > 0) {
-        const { data: resultsData } = await supabase
+        const { data: resultsData, error: resultsError } = await supabase
           .from('results')
           .select('*')
           .in('race_id', raceIds)
           .order('created_at', { ascending: false });
+        
+        if (resultsError) throw resultsError;
         if (resultsData) setResults(resultsData);
       } else {
         setResults([]);
@@ -47,9 +58,25 @@ export function useChampionshipData(selectedChampionship) {
 
     } catch (error) {
       console.error('Error loading championship data:', error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  return { drivers, races, results, loading, setDrivers, setRaces, setResults };
+  const refreshData = () => {
+    if (selectedChampionship) {
+      loadChampionshipData(selectedChampionship.id);
+    }
+  };
+
+  return { 
+    drivers, 
+    races, 
+    results, 
+    loading, 
+    setDrivers, 
+    setRaces, 
+    setResults,
+    refreshData 
+  };
 }
