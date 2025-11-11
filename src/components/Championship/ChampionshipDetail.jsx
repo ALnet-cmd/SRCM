@@ -1,8 +1,8 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { ChampionshipContext } from '../../context/ChampionshipContext';
+import { ChampionshipContext } from '../context/ChampionshipContext'; // PERCORSO CORRETTO
 import RaceResults from '../RaceResults';
-import { getChampionshipById } from '../../services/championshipService';
+import { getChampionshipById } from '../services/championshipService';
 import './ChampionshipDetail.css';
 
 const ChampionshipDetail = () => {
