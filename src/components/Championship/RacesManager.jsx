@@ -67,40 +67,40 @@ export default function RacesManager({
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input 
-              placeholder={t.raceName} 
+              placeholder="Nome gara" 
               value={raceForm.name} 
               onChange={(e) => setRaceForm({ ...raceForm, name: e.target.value })} 
-              className="px-4 py-2 border rounded-lg" 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
             />
             <input 
-              placeholder={t.location} 
+              placeholder="Location" 
               value={raceForm.location} 
               onChange={(e) => setRaceForm({ ...raceForm, location: e.target.value })} 
-              className="px-4 py-2 border rounded-lg" 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
             />
             <input 
               type="date" 
               value={raceForm.date} 
               onChange={(e) => setRaceForm({ ...raceForm, date: e.target.value })} 
-              className="px-4 py-2 border rounded-lg" 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
             />
             <input 
-              placeholder={t.trackImageUrl} 
+              placeholder="URL immagine pista" 
               value={raceForm.trackImageUrl} 
               onChange={(e) => setRaceForm({ ...raceForm, trackImageUrl: e.target.value })} 
-              className="px-4 py-2 border rounded-lg" 
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
             />
           </div>
           {raceForm.trackImageUrl && (
             <div className="mt-4">
-              <p className="text-sm font-medium mb-2">{t.trackPreview}</p>
+              <p className="text-sm font-medium mb-2">Anteprima pista</p>
               <img src={raceForm.trackImageUrl} alt="Track preview" className="w-full h-48 object-cover rounded-lg border" />
             </div>
           )}
           <div className="flex gap-2 mt-4">
             <button 
               onClick={handleRaceSubmit} 
-              className="px-6 py-2 text-white rounded-lg" 
+              className="px-6 py-3 text-white rounded-lg font-semibold transition-colors" 
               style={{ backgroundColor: theme.primary }}
             >
               {editingRace ? t.update : t.add}
@@ -111,7 +111,7 @@ export default function RacesManager({
                   setEditingRace(null); 
                   setRaceForm({ name: '', location: '', date: '', trackImageUrl: '' }); 
                 }} 
-                className="px-6 py-2 bg-gray-500 text-white rounded-lg"
+                className="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold transition-colors"
               >
                 {t.cancel}
               </button>
@@ -150,14 +150,14 @@ export default function RacesManager({
                           trackImageUrl: race.track_image_url || '' 
                         }); 
                       }} 
-                      className="text-blue-500 hover:text-blue-700 transition"
+                      className="text-blue-500 hover:text-blue-700 transition p-1"
                     >
                       <Edit className="w-4 h-4" />
                     </button>
                     {isAdmin && (
                       <button 
                         onClick={() => handleDelete(race.id)} 
-                        className="text-red-500 hover:text-red-700 transition"
+                        className="text-red-500 hover:text-red-700 transition p-1"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
