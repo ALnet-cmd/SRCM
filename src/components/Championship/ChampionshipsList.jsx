@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Trophy, Edit, Trash2 } from 'lucide-react';
+import { Trophy, Edit, Trash2, Award } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
+import PointSystemManager from './PointSystemManager';
 
 export default function ChampionshipsList({ 
   championships, 
@@ -12,7 +13,15 @@ export default function ChampionshipsList({
   t 
 }) {
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ name: '', season: '', description: '', coverImageUrl: '' });
+  const [form, setForm] = useState({ 
+    name: '', 
+    season: '', 
+    description: '', 
+    coverImageUrl: '',
+    point_system_id: 1 // Sistema di punteggio di default
+  });
+  const [showPointSystem, setShowPointSystem] = useState(false);
+  const [pointSystems, setPointSystems] = useState([]);
 
   const handleSubmit = async () => {
     try {
@@ -21,7 +30,8 @@ export default function ChampionshipsList({
           name: form.name, 
           season: form.season, 
           description: form.description,
-          cover_image_url: form.coverImageUrl || null
+          cover_image_url: form.coverImageUrl || null,
+          point_system_id: form.point_system_id
         }).eq('id', editing);
         if (error) throw error;
         setChampionships(championships.map(c => c.id === editing ? { ...c, ...form, cover_image_url: form.coverImageUrl } : c));
@@ -30,13 +40,18 @@ export default function ChampionshipsList({
           name: form.name, 
           season: form.season, 
           description: form.description,
-          cover_image_url: form.coverImageUrl || null
-        }).select().single();
+          cover_image_url: form.coverImageUrl || null,
+          point_system_id: form.point_system_id
+        }).select(`
+          *,
+          point_systems (id, name, points)
+        `).single();
         if (error) throw error;
         setChampionships([...championships, data]);
       }
       setEditing(null);
-      setForm({ name: '', season: '', description: '', coverImageUrl: '' });
+      setForm({ name: '', season: '', description: '', coverImageUrl: '', point_system_id: 1 });
+      setShowPointSystem(false);
       alert(t.saved);
     } catch (error) {
       console.error('Error:', error);
@@ -50,7 +65,8 @@ export default function ChampionshipsList({
       name: c.name, 
       season: c.season, 
       description: c.description,
-      coverImageUrl: c.cover_image_url || ''
+      coverImageUrl: c.cover_image_url || '',
+      point_system_id: c.point_system_id || 1
     });
   };
 
@@ -67,6 +83,26 @@ export default function ChampionshipsList({
     }
   };
 
+  const handleSystemSelected = (systemId) => {
+    setForm({ ...form, point_system_id: systemId });
+  };
+
+  const getPointSystemName = (championship) => {
+    if (championship.point_systems) {
+      return championship.point_systems.name;
+    }
+    return 'F1 2023'; // Default
+  };
+
+  const getPointSystemSummary = (championship) => {
+    if (championship.point_systems && championship.point_systems.points) {
+      const points = championship.point_systems.points;
+      const positions = Object.keys(points).slice(0, 3).map(pos => `${pos}°:${points[pos]}p`).join(', ');
+      return positions + (Object.keys(points).length > 3 ? '...' : '');
+    }
+    return '1°:25p, 2°:18p, 3°:15p...';
+  };
+
   return (
     <div className="space-y-6">
       {canEdit && (
@@ -74,7 +110,9 @@ export default function ChampionshipsList({
           <h3 className="text-xl font-bold mb-4" style={{ color: theme.primary }}>
             {editing ? t.editChampionship : t.newChampionship}
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          {/* Form Base */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <input 
               placeholder={t.name} 
               value={form.name} 
@@ -100,12 +138,52 @@ export default function ChampionshipsList({
               className="px-4 py-2 border rounded-lg" 
             />
           </div>
+
+          {/* Sistema di Punteggio */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Sistema di Punteggio
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowPointSystem(!showPointSystem)}
+                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
+              >
+                <Award className="w-4 h-4" />
+                {showPointSystem ? 'Nascondi' : 'Gestisci Punteggi'}
+              </button>
+            </div>
+            
+            {!showPointSystem ? (
+              <div className="p-3 border border-gray-300 rounded-lg bg-gray-50">
+                <div className="text-sm">
+                  <strong>Sistema attuale:</strong> {form.point_system_id === 1 ? 'F1 2023' : 
+                    form.point_system_id === 2 ? 'F1 Classico' : 
+                    form.point_system_id === 3 ? 'Podi Only' : 
+                    form.point_system_id === 4 ? 'Top 5' : 'Personalizzato'}
+                </div>
+                <div className="text-xs text-gray-600 mt-1">
+                  Clicca "Gestisci Punteggi" per modificare
+                </div>
+              </div>
+            ) : (
+              <PointSystemManager
+                championship={editing ? { point_system_id: form.point_system_id } : null}
+                theme={theme}
+                onSystemSelected={handleSystemSelected}
+                onClose={() => setShowPointSystem(false)}
+              />
+            )}
+          </div>
+
           {form.coverImageUrl && (
             <div className="mt-4">
               <p className="text-sm font-medium mb-2">{t.coverPreview}</p>
               <img src={form.coverImageUrl} alt="Cover preview" className="w-full h-48 object-cover rounded-lg border" />
             </div>
           )}
+
           <div className="flex gap-2 mt-4">
             <button 
               onClick={handleSubmit} 
@@ -118,7 +196,8 @@ export default function ChampionshipsList({
               <button 
                 onClick={() => { 
                   setEditing(null); 
-                  setForm({ name: '', season: '', description: '', coverImageUrl: '' }); 
+                  setForm({ name: '', season: '', description: '', coverImageUrl: '', point_system_id: 1 }); 
+                  setShowPointSystem(false);
                 }} 
                 className="px-6 py-2 bg-gray-500 text-white rounded-lg"
               >
@@ -129,6 +208,7 @@ export default function ChampionshipsList({
         </div>
       )}
 
+      {/* Lista Campionati */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {championships.map(c => (
           <div 
@@ -158,9 +238,23 @@ export default function ChampionshipsList({
                   </div>
                 )}
               </div>
+              
               <h3 className="text-lg font-bold">{c.name}</h3>
               <p className="text-gray-600">{c.season}</p>
               <p className="text-sm text-gray-500 mt-2">{c.description}</p>
+              
+              {/* Info Sistema Punteggio */}
+              <div className="mt-3 p-2 bg-gray-50 rounded border">
+                <div className="flex items-center gap-1 text-xs">
+                  <Award className="w-3 h-3" />
+                  <span className="font-medium">Punti:</span>
+                  <span>{getPointSystemSummary(c)}</span>
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  +1 punto per chi finisce la gara
+                </div>
+              </div>
+
               <div className="mt-4 pt-4 border-t">
                 <p className="text-sm font-semibold" style={{ color: theme.primary }}>
                   {t.clickToEnter}
