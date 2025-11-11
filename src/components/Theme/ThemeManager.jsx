@@ -1,10 +1,8 @@
-import React, { useState, useRef } from 'react';
-import { Trophy, Palette, ArrowLeft, Upload, X, Save, Paintbrush } from 'lucide-react';
+import React, { useState } from 'react';
+import { Trophy, Palette, ArrowLeft, Save, Paintbrush, Link } from 'lucide-react';
 
 export default function ThemeManager({ theme, t, saveThemeData, onBack }) {
   const [themeForm, setThemeForm] = useState({ ...theme });
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef(null);
 
   // Palette scuderie F1
   const f1Palettes = [
@@ -44,11 +42,6 @@ export default function ThemeManager({ theme, t, saveThemeData, onBack }) {
   };
 
   const handleThemeSubmit = () => {
-    if (themeForm.appLogoUrl && themeForm.appLogoUrl.startsWith('blob:')) {
-      if (!window.confirm('Il logo è un file locale temporaneo. Per mantenerlo permanentemente, usa un URL esterno. Vuoi procedere comunque?')) {
-        return;
-      }
-    }
     saveThemeData(themeForm);
   };
 
@@ -59,43 +52,6 @@ export default function ThemeManager({ theme, t, saveThemeData, onBack }) {
     const b = parseInt(hex.substr(4, 2), 16);
     const brightness = (r * 299 + g * 587 + b * 114) / 1000;
     return brightness > 128 ? '#000000' : '#FFFFFF';
-  };
-
-  const handleFileUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      alert('Seleziona solo file immagine (JPG, PNG, GIF)');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      alert('File troppo grande. Dimensione massima: 5MB');
-      return;
-    }
-
-    setUploading(true);
-    try {
-      const objectUrl = URL.createObjectURL(file);
-      setThemeForm({ ...themeForm, appLogoUrl: objectUrl });
-      alert('Logo caricato in anteprima! Per un logo permanente usa un URL esterno.');
-    } catch (error) {
-      alert('Errore durante il caricamento del logo');
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const removeLogo = () => {
-    if (themeForm.appLogoUrl && themeForm.appLogoUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(themeForm.appLogoUrl);
-    }
-    setThemeForm({ ...themeForm, appLogoUrl: null });
-  };
-
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
   };
 
   return (
@@ -266,63 +222,40 @@ export default function ThemeManager({ theme, t, saveThemeData, onBack }) {
           
           {/* Gestione Logo */}
           <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="font-semibold text-lg mb-3">Logo App</h3>
-            
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-              accept="image/*"
-              className="hidden"
-            />
+            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+              <Link className="w-5 h-5" />
+              Logo App
+            </h3>
             
             <div className="space-y-4">
-              <button
-                onClick={triggerFileInput}
-                disabled={uploading}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors disabled:opacity-50"
-              >
-                <Upload className="w-5 h-5" />
-                {uploading ? 'Caricamento...' : 'Carica Logo'}
-              </button>
-
-              {themeForm.appLogoUrl && (
-                <div className="border rounded-lg p-3 bg-white">
-                  <div className="flex items-center gap-3">
-                    <img 
-                      src={themeForm.appLogoUrl} 
-                      alt="Logo" 
-                      className="w-12 h-12 object-contain rounded"
-                    />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">
-                        {themeForm.appLogoUrl.startsWith('blob:') ? 'Logo Temporaneo' : 'Logo da URL'}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {themeForm.appLogoUrl.startsWith('blob:') 
-                          ? 'Salva per mantenere permanentemente' 
-                          : 'Logo permanente'}
-                      </p>
-                    </div>
-                    <button
-                      onClick={removeLogo}
-                      className="p-1 text-red-500 hover:text-red-700"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              )}
-
               <div>
-                <label className="block text-sm font-medium mb-2">URL Logo Permanente</label>
+                <label className="block text-sm font-medium mb-2">URL Logo</label>
                 <input 
                   value={themeForm.appLogoUrl || ''} 
                   onChange={(e) => setThemeForm({ ...themeForm, appLogoUrl: e.target.value })} 
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
                   placeholder="https://example.com/logo.png"
                 />
+                <p className="text-xs text-gray-500 mt-2">
+                  Inserisci l'URL di un'immagine hosted su servizi come Imgur, Cloudinary, Google Drive (condivisione pubblica), etc.
+                </p>
               </div>
+
+              {themeForm.appLogoUrl && (
+                <div className="border rounded-lg p-3 bg-white">
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src={themeForm.appLogoUrl} 
+                      alt="Anteprima logo" 
+                      className="w-12 h-12 object-contain rounded"
+                    />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">Anteprima logo</p>
+                      <p className="text-xs text-gray-500">Logo da URL esterno</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
