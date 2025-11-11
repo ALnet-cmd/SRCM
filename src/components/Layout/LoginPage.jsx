@@ -1,28 +1,28 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Trophy, Globe } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
-export default function LoginPage({ theme, lang, t, setUser, setLang, setTheme }) {
+export default function LoginPage() {
+  const { login, theme, lang, setLang, translations: t } = useAuth();
+  const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
   const handleLogin = () => {
-    const users = {
-      admin: { password: 'admin123', role: 'admin', name: 'Admin' },
-      editor: { password: 'editor123', role: 'editor', name: 'Editor' },
-      viewer: { password: 'viewer123', role: 'viewer', name: 'Viewer' }
-    };
-
-    if (users[username] && users[username].password === password) {
-      setUser({ username, ...users[username] });
+    const result = login(username, password);
+    
+    if (result.success) {
+      navigate('/');
     } else {
-      alert(t.invalidCredentials);
+      setError(result.error);
+      setTimeout(() => setError(''), 3000);
     }
   };
 
   const toggleLanguage = () => {
-    const newLang = lang === 'it' ? 'en' : 'it';
-    setLang(newLang);
-    setTheme({ ...theme, language: newLang });
+    setLang(lang === 'it' ? 'en' : 'it');
   };
 
   return (
@@ -35,6 +35,7 @@ export default function LoginPage({ theme, lang, t, setUser, setLang, setTheme }
       }}
     >
       <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">
+        {/* Bottone cambio lingua */}
         <div className="flex justify-end mb-4">
           <button
             onClick={toggleLanguage}
@@ -42,28 +43,76 @@ export default function LoginPage({ theme, lang, t, setUser, setLang, setTheme }
             style={{ borderColor: theme.primary, color: theme.primary }}
           >
             <Globe className="w-4 h-4" />
-            <span className="text-sm font-semibold">{lang === 'it' ? '🇬🇧 English' : '🇮🇹 Italiano'}</span>
+            <span className="text-sm font-semibold">
+              {lang === 'it' ? '🇬🇧 English' : '🇮🇹 Italiano'}
+            </span>
           </button>
         </div>
 
+        {/* Logo e titolo */}
         <div className="flex items-center justify-center mb-8">
           {theme.appLogoUrl ? (
-            <img src={theme.appLogoUrl} alt="Logo" className="w-12 h-12 mr-3 object-contain" />
+            <img 
+              src={theme.appLogoUrl} 
+              alt="Logo" 
+              className="w-12 h-12 mr-3 object-contain" 
+            />
           ) : (
-            <Trophy className="w-12 h-12 mr-3" style={{ color: theme.primary }} />
+            <Trophy 
+              className="w-12 h-12 mr-3" 
+              style={{ color: theme.primary }} 
+            />
           )}
-          <h1 className="text-3xl font-bold text-gray-800">{theme.appTitle}</h1>
+          <h1 className="text-3xl font-bold text-gray-800">
+            {theme.appTitle}
+          </h1>
         </div>
+
+        {/* Form di login */}
         <div className="space-y-4">
-          <input type="text" placeholder={t.username} value={username} onChange={(e) => setUsername(e.target.value)} className="w-full px-4 py-3 border rounded-lg" />
-          <input type="password" placeholder={t.password} value={password} onChange={(e) => setPassword(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleLogin()} className="w-full px-4 py-3 border rounded-lg" />
-          <button onClick={handleLogin} className="w-full py-3 text-white rounded-lg font-semibold" style={{ backgroundColor: theme.primary }}>{t.login}</button>
+          <input 
+            type="text" 
+            placeholder={t.username} 
+            value={username} 
+            onChange={(e) => setUsername(e.target.value)} 
+            className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2"
+            style={{ focusRing: theme.primary }}
+          />
+          
+          <input 
+            type="password" 
+            placeholder={t.password} 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            onKeyPress={(e) => e.key === 'Enter' && handleLogin()} 
+            className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2"
+            style={{ focusRing: theme.primary }}
+          />
+
+          {/* Messaggio di errore */}
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
+
+          <button 
+            onClick={handleLogin} 
+            className="w-full py-3 text-white rounded-lg font-semibold hover:opacity-90 transition"
+            style={{ backgroundColor: theme.primary }}
+          >
+            {t.login}
+          </button>
         </div>
-        <div className="mt-6 text-sm text-gray-600">
+
+        {/* Credenziali demo */}
+        <div className="mt-6 text-sm text-gray-600 bg-gray-50 p-4 rounded-lg">
           <p className="font-semibold mb-2">{t.demoCredentials}</p>
-          <p>Admin: admin / admin123</p>
-          <p>Editor: editor / editor123</p>
-          <p>Viewer: viewer / viewer123</p>
+          <div className="space-y-1">
+            <p><strong>Admin:</strong> admin / admin123</p>
+            <p><strong>Editor:</strong> editor / editor123</p>
+            <p><strong>Viewer:</strong> viewer / viewer123</p>
+          </div>
         </div>
       </div>
     </div>
