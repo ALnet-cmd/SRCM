@@ -16,8 +16,8 @@ export default function RacesManager({
     name: '', 
     circuit: '',
     date: '', 
-    laps: '',
-    trackImageUrl: '' 
+    laps: ''
+    // Rimossa trackImageUrl perché non esiste nel database
   });
   const [error, setError] = useState('');
 
@@ -48,8 +48,8 @@ export default function RacesManager({
         name: raceForm.name.trim(),
         circuit: raceForm.circuit.trim(),
         date: raceForm.date,
-        laps: raceForm.laps.trim(),
-        track_image: raceForm.trackImageUrl?.trim() || null
+        laps: raceForm.laps.trim()
+        // Rimossa track_image perché non esiste nel database
       };
 
       let result;
@@ -77,7 +77,7 @@ export default function RacesManager({
       }
 
       setEditingRace(null);
-      setRaceForm({ name: '', circuit: '', date: '', laps: '', trackImageUrl: '' });
+      setRaceForm({ name: '', circuit: '', date: '', laps: '' });
       alert('Gara salvata con successo!');
       
     } catch (error) {
@@ -162,26 +162,7 @@ export default function RacesManager({
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
               />
             </div>
-            
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-2 text-gray-700">
-                URL Immagine Pista
-              </label>
-              <input 
-                placeholder="https://example.com/track.jpg" 
-                value={raceForm.trackImageUrl} 
-                onChange={(e) => setRaceForm({ ...raceForm, trackImageUrl: e.target.value })} 
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
-              />
-            </div>
           </div>
-
-          {raceForm.trackImageUrl && (
-            <div className="mt-4">
-              <p className="text-sm font-medium mb-2">Anteprima pista</p>
-              <img src={raceForm.trackImageUrl} alt="Track preview" className="w-full h-48 object-cover rounded-lg border" />
-            </div>
-          )}
 
           <div className="flex gap-2 mt-4">
             <button 
@@ -195,7 +176,7 @@ export default function RacesManager({
               <button 
                 onClick={() => { 
                   setEditingRace(null); 
-                  setRaceForm({ name: '', circuit: '', date: '', laps: '', trackImageUrl: '' }); 
+                  setRaceForm({ name: '', circuit: '', date: '', laps: '' }); 
                   setError('');
                 }} 
                 className="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold transition-colors hover:bg-gray-600"
@@ -210,11 +191,6 @@ export default function RacesManager({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {races.map(race => (
           <div key={race.id} className="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition">
-            {race.track_image && (
-              <div className="h-32 overflow-hidden">
-                <img src={race.track_image} alt={race.name} className="w-full h-full object-cover" />
-              </div>
-            )}
             <div className="p-6">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
@@ -237,8 +213,7 @@ export default function RacesManager({
                           name: race.name, 
                           circuit: race.circuit, 
                           date: race.date,
-                          laps: race.laps,
-                          trackImageUrl: race.track_image || '' 
+                          laps: race.laps
                         }); 
                         setError('');
                       }} 
