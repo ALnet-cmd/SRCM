@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Trophy, Palette, ArrowLeft, Upload, X } from 'lucide-react';
+import { Trophy, Palette, ArrowLeft, Upload, X, Save, Paintbrush } from 'lucide-react';
 
 export default function ThemeManager({ theme, t, saveThemeData, onBack }) {
   const [themeForm, setThemeForm] = useState({ ...theme });
@@ -13,28 +13,24 @@ export default function ThemeManager({ theme, t, saveThemeData, onBack }) {
       primary: "#DC0000",
       secondary: "#FFD700", 
       background: "#060000",
-      textColor: "#FFFFFF"
     },
     {
       name: "Mercedes",
       primary: "#00D2BE",
       secondary: "#000000",
       background: "#1E1E1E",
-      textColor: "#FFFFFF"
     },
     {
       name: "Red Bull",
       primary: "#0600EF",
       secondary: "#FF0000",
       background: "#0C0C0C", 
-      textColor: "#FFFFFF"
     },
     {
       name: "McLaren",
       primary: "#FF8700",
       secondary: "#47C7FC",
       background: "#F0F0F0",
-      textColor: "#000000"
     }
   ];
 
@@ -48,17 +44,14 @@ export default function ThemeManager({ theme, t, saveThemeData, onBack }) {
   };
 
   const handleThemeSubmit = () => {
-    // Avvisa se il logo è un blob URL temporaneo
     if (themeForm.appLogoUrl && themeForm.appLogoUrl.startsWith('blob:')) {
-      if (!window.confirm('Il logo è un file locale temporaneo. Per mantenerlo permanentemente, usa un URL esterno o caricalo su un servizio di hosting. Vuoi procedere comunque?')) {
+      if (!window.confirm('Il logo è un file locale temporaneo. Per mantenerlo permanentemente, usa un URL esterno. Vuoi procedere comunque?')) {
         return;
       }
     }
-    
     saveThemeData(themeForm);
   };
 
-  // Funzione per determinare il colore del testo
   const getTextColor = (backgroundColor) => {
     const hex = backgroundColor.replace('#', '');
     const r = parseInt(hex.substr(0, 2), 16);
@@ -68,51 +61,37 @@ export default function ThemeManager({ theme, t, saveThemeData, onBack }) {
     return brightness > 128 ? '#000000' : '#FFFFFF';
   };
 
-  // Funzione per gestire l'upload del file (solo anteprima locale)
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('Per favore seleziona solo file immagine (JPG, PNG, GIF, etc.)');
+      alert('Seleziona solo file immagine (JPG, PNG, GIF)');
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('Il file è troppo grande. Dimensione massima: 5MB');
+      alert('File troppo grande. Dimensione massima: 5MB');
       return;
     }
 
     setUploading(true);
-
     try {
-      // Crea un URL temporaneo per l'anteprima
       const objectUrl = URL.createObjectURL(file);
-      
-      setThemeForm({
-        ...themeForm,
-        appLogoUrl: objectUrl
-      });
-      
-      alert('Logo caricato in anteprima! Ricorda che questo è un file temporaneo. Per un logo permanente, usa un URL esterno o carica il file su un servizio di hosting come Imgur, Cloudinary, etc.');
-      
+      setThemeForm({ ...themeForm, appLogoUrl: objectUrl });
+      alert('Logo caricato in anteprima! Per un logo permanente usa un URL esterno.');
     } catch (error) {
-      console.error('Errore durante il caricamento:', error);
       alert('Errore durante il caricamento del logo');
     } finally {
       setUploading(false);
     }
   };
 
-  // Funzione per rimuovere il logo
   const removeLogo = () => {
     if (themeForm.appLogoUrl && themeForm.appLogoUrl.startsWith('blob:')) {
       URL.revokeObjectURL(themeForm.appLogoUrl);
     }
-    setThemeForm({
-      ...themeForm,
-      appLogoUrl: null
-    });
+    setThemeForm({ ...themeForm, appLogoUrl: null });
   };
 
   const triggerFileInput = () => {
@@ -121,275 +100,300 @@ export default function ThemeManager({ theme, t, saveThemeData, onBack }) {
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      {/* Header con pulsante back */}
-      <div className="flex items-center gap-4 mb-6">
-        <button 
-          onClick={onBack}
-          className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition shadow"
-          title="Torna ai campionati"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <h2 className="text-2xl font-bold" style={{ color: theme.primary }}>
-          <Palette className="w-6 h-6 inline mr-2" />
-          {t.themeSettings}
-        </h2>
-      </div>
-      
-      {/* Sezione Palette F1 */}
-      <div className="mb-8">
-        <h3 className="text-lg font-bold mb-4">{t.f1Palettes || "F1 Team Palettes"}</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {f1Palettes.map((palette, index) => (
-            <button
-              key={index}
-              onClick={() => applyPalette(palette)}
-              className="p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow border-2 border-gray-200 hover:border-gray-400"
-              style={{ 
-                backgroundColor: palette.background,
-                color: palette.textColor
-              }}
-            >
-              <div className="text-center">
-                <div className="font-bold text-sm mb-3">{palette.name}</div>
-                <div className="flex justify-center gap-2 mb-3">
-                  <div 
-                    className="w-6 h-6 rounded-full border border-gray-300 shadow"
-                    style={{ backgroundColor: palette.primary }}
-                    title="Primary Color"
-                  ></div>
-                  <div 
-                    className="w-6 h-6 rounded-full border border-gray-300 shadow"
-                    style={{ backgroundColor: palette.secondary }}
-                    title="Secondary Color"
-                  ></div>
-                  <div 
-                    className="w-6 h-6 rounded-full border border-gray-300 shadow"
-                    style={{ backgroundColor: palette.background }}
-                    title="Background Color"
-                  ></div>
-                </div>
-                <div className="text-xs opacity-80 bg-black bg-opacity-20 rounded px-2 py-1">
-                  Applica
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Form impostazioni tema personalizzato */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium mb-2">{t.appTitle}</label>
-          <input 
-            value={themeForm.appTitle} 
-            onChange={(e) => setThemeForm({ ...themeForm, appTitle: e.target.value })} 
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
-          />
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium mb-2">{t.language}</label>
-          <select 
-            value={themeForm.language} 
-            onChange={(e) => setThemeForm({ ...themeForm, language: e.target.value })} 
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={onBack}
+            className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition shadow"
+            title="Torna ai campionati"
           >
-            <option value="it">Italiano</option>
-            <option value="en">English</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-2">{t.primaryColor}</label>
-          <div className="flex gap-2">
-            <input 
-              type="color" 
-              value={themeForm.primary} 
-              onChange={(e) => setThemeForm({ ...themeForm, primary: e.target.value })} 
-              className="w-full h-12 px-2 border rounded-lg cursor-pointer" 
-            />
-            <span className="text-sm bg-gray-100 px-3 py-2 rounded-lg font-mono">
-              {themeForm.primary}
-            </span>
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h2 className="text-2xl font-bold flex items-center gap-2">
+              <Paintbrush className="w-6 h-6" style={{ color: theme.primary }} />
+              Personalizzazione Tema
+            </h2>
+            <p className="text-gray-600 text-sm">Personalizza l'aspetto dell'applicazione</p>
           </div>
         </div>
+      </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-2">{t.secondaryColor}</label>
-          <div className="flex gap-2">
-            <input 
-              type="color" 
-              value={themeForm.secondary} 
-              onChange={(e) => setThemeForm({ ...themeForm, secondary: e.target.value })} 
-              className="w-full h-12 px-2 border rounded-lg cursor-pointer" 
-            />
-            <span className="text-sm bg-gray-100 px-3 py-2 rounded-lg font-mono">
-              {themeForm.secondary}
-            </span>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-2">{t.backgroundColor}</label>
-          <div className="flex gap-2">
-            <input 
-              type="color" 
-              value={themeForm.background} 
-              onChange={(e) => setThemeForm({ ...themeForm, background: e.target.value })} 
-              className="w-full h-12 px-2 border rounded-lg cursor-pointer" 
-            />
-            <span className="text-sm bg-gray-100 px-3 py-2 rounded-lg font-mono">
-              {themeForm.background}
-            </span>
-          </div>
-        </div>
-
-        {/* Sezione Upload Logo */}
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium mb-2">Logo dell'App</label>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Colonna Sinistra - Palette e Info Base */}
+        <div className="lg:col-span-1 space-y-6">
           
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileUpload}
-            accept="image/*"
-            className="hidden"
-          />
-          
-          <div className="flex flex-col gap-4">
-            {/* Pulsante Upload */}
-            <button
-              type="button"
-              onClick={triggerFileInput}
-              disabled={uploading}
-              className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors disabled:opacity-50"
-            >
-              <Upload className="w-5 h-5" />
-              {uploading ? 'Caricamento...' : 'Carica logo (anteprima locale)'}
-            </button>
-
-            {/* Anteprima Logo */}
-            {themeForm.appLogoUrl && (
-              <div className="flex items-center gap-4 p-4 border rounded-lg bg-gray-50">
-                <div className="flex-shrink-0">
-                  <img 
-                    src={themeForm.appLogoUrl} 
-                    alt="Logo anteprima" 
-                    className="w-16 h-16 object-contain rounded"
-                  />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">
-                    {themeForm.appLogoUrl.startsWith('blob:') ? 'Logo temporaneo (file locale)' : 'Logo da URL'}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {themeForm.appLogoUrl.startsWith('blob:') 
-                      ? 'Questo logo è temporaneo e potrebbe non funzionare dopo il ricaricamento' 
-                      : 'Logo permanente da URL esterno'}
-                  </p>
-                </div>
+          {/* Palette Predefinite */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+              <Palette className="w-5 h-5" />
+              Team F1 Predefiniti
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              {f1Palettes.map((palette, index) => (
                 <button
-                  onClick={removeLogo}
-                  className="p-2 text-red-500 hover:text-red-700 transition-colors"
-                  title="Rimuovi logo"
+                  key={index}
+                  onClick={() => applyPalette(palette)}
+                  className="p-3 rounded-lg border hover:shadow-md transition-all text-left"
+                  style={{ backgroundColor: palette.background }}
                 >
-                  <X className="w-5 h-5" />
+                  <div className="font-medium text-sm mb-2" style={{ color: getTextColor(palette.background) }}>
+                    {palette.name}
+                  </div>
+                  <div className="flex gap-1">
+                    <div className="w-4 h-4 rounded border" style={{ backgroundColor: palette.primary }}></div>
+                    <div className="w-4 h-4 rounded border" style={{ backgroundColor: palette.secondary }}></div>
+                    <div className="w-4 h-4 rounded border" style={{ backgroundColor: palette.background }}></div>
+                  </div>
                 </button>
-              </div>
-            )}
+              ))}
+            </div>
+          </div>
 
-            {/* Input URL alternativo */}
-            <div>
-              <label className="block text-sm font-medium mb-2">URL logo permanente (consigliato)</label>
-              <input 
-                value={themeForm.appLogoUrl || ''} 
-                onChange={(e) => setThemeForm({ ...themeForm, appLogoUrl: e.target.value })} 
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                placeholder="https://example.com/logo.png"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Per un logo permanente, carica l'immagine su servizi come Imgur, Cloudinary, Google Drive (condivisione pubblica), etc.
-              </p>
+          {/* Informazioni Base */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="font-semibold text-lg mb-3">Impostazioni Base</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Nome App</label>
+                <input 
+                  value={themeForm.appTitle} 
+                  onChange={(e) => setThemeForm({ ...themeForm, appTitle: e.target.value })} 
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+                  placeholder="Sim Racing Manager"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">Lingua</label>
+                <select 
+                  value={themeForm.language} 
+                  onChange={(e) => setThemeForm({ ...themeForm, language: e.target.value })} 
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="it">Italiano</option>
+                  <option value="en">English</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium mb-2">{t.backgroundImageUrl}</label>
-          <input 
-            value={themeForm.backgroundImageUrl || ''} 
-            onChange={(e) => setThemeForm({ ...themeForm, backgroundImageUrl: e.target.value })} 
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
-            placeholder="https://example.com/background.jpg"
-          />
+        {/* Colonna Centrale - Colori Personalizzati */}
+        <div className="lg:col-span-1 space-y-6">
+          
+          {/* Colori Principali */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="font-semibold text-lg mb-4">Colori Principali</h3>
+            <div className="space-y-4">
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">Colore Primario</label>
+                <div className="flex gap-2 items-center">
+                  <input 
+                    type="color" 
+                    value={themeForm.primary} 
+                    onChange={(e) => setThemeForm({ ...themeForm, primary: e.target.value })} 
+                    className="w-12 h-12 border rounded-lg cursor-pointer" 
+                  />
+                  <input 
+                    value={themeForm.primary} 
+                    onChange={(e) => setThemeForm({ ...themeForm, primary: e.target.value })} 
+                    className="flex-1 px-3 py-2 border rounded-lg font-mono text-sm" 
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Colore Secondario</label>
+                <div className="flex gap-2 items-center">
+                  <input 
+                    type="color" 
+                    value={themeForm.secondary} 
+                    onChange={(e) => setThemeForm({ ...themeForm, secondary: e.target.value })} 
+                    className="w-12 h-12 border rounded-lg cursor-pointer" 
+                  />
+                  <input 
+                    value={themeForm.secondary} 
+                    onChange={(e) => setThemeForm({ ...themeForm, secondary: e.target.value })} 
+                    className="flex-1 px-3 py-2 border rounded-lg font-mono text-sm" 
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Sfondo</label>
+                <div className="flex gap-2 items-center">
+                  <input 
+                    type="color" 
+                    value={themeForm.background} 
+                    onChange={(e) => setThemeForm({ ...themeForm, background: e.target.value })} 
+                    className="w-12 h-12 border rounded-lg cursor-pointer" 
+                  />
+                  <input 
+                    value={themeForm.background} 
+                    onChange={(e) => setThemeForm({ ...themeForm, background: e.target.value })} 
+                    className="flex-1 px-3 py-2 border rounded-lg font-mono text-sm" 
+                  />
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Immagini */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="font-semibold text-lg mb-3">Immagini</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Sfondo Login</label>
+                <input 
+                  value={themeForm.backgroundImageUrl || ''} 
+                  onChange={(e) => setThemeForm({ ...themeForm, backgroundImageUrl: e.target.value })} 
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+                  placeholder="https://example.com/background.jpg"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Colonna Destra - Logo e Anteprima */}
+        <div className="lg:col-span-1 space-y-6">
+          
+          {/* Gestione Logo */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="font-semibold text-lg mb-3">Logo App</h3>
+            
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept="image/*"
+              className="hidden"
+            />
+            
+            <div className="space-y-4">
+              <button
+                onClick={triggerFileInput}
+                disabled={uploading}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors disabled:opacity-50"
+              >
+                <Upload className="w-5 h-5" />
+                {uploading ? 'Caricamento...' : 'Carica Logo'}
+              </button>
+
+              {themeForm.appLogoUrl && (
+                <div className="border rounded-lg p-3 bg-white">
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src={themeForm.appLogoUrl} 
+                      alt="Logo" 
+                      className="w-12 h-12 object-contain rounded"
+                    />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">
+                        {themeForm.appLogoUrl.startsWith('blob:') ? 'Logo Temporaneo' : 'Logo da URL'}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {themeForm.appLogoUrl.startsWith('blob:') 
+                          ? 'Salva per mantenere permanentemente' 
+                          : 'Logo permanente'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={removeLogo}
+                      className="p-1 text-red-500 hover:text-red-700"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium mb-2">URL Logo Permanente</label>
+                <input 
+                  value={themeForm.appLogoUrl || ''} 
+                  onChange={(e) => setThemeForm({ ...themeForm, appLogoUrl: e.target.value })} 
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+                  placeholder="https://example.com/logo.png"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Anteprima */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="font-semibold text-lg mb-3">Anteprima</h3>
+            
+            <div className="space-y-4">
+              {/* Header Anteprima */}
+              <div 
+                className="flex items-center gap-3 p-3 rounded-lg shadow"
+                style={{ 
+                  backgroundColor: themeForm.secondary,
+                  color: getTextColor(themeForm.secondary)
+                }}
+              >
+                {themeForm.appLogoUrl ? (
+                  <img src={themeForm.appLogoUrl} alt="Logo" className="w-8 h-8 object-contain" />
+                ) : (
+                  <Trophy className="w-8 h-8" style={{ color: themeForm.primary }} />
+                )}
+                <span className="font-bold">{themeForm.appTitle || 'Sim Racing Manager'}</span>
+              </div>
+
+              {/* Colori Anteprima */}
+              <div className="grid grid-cols-3 gap-2">
+                <div 
+                  className="h-12 rounded text-xs font-medium flex items-center justify-center"
+                  style={{ 
+                    backgroundColor: themeForm.primary,
+                    color: getTextColor(themeForm.primary)
+                  }}
+                >
+                  Primario
+                </div>
+                <div 
+                  className="h-12 rounded text-xs font-medium flex items-center justify-center"
+                  style={{ 
+                    backgroundColor: themeForm.secondary,
+                    color: getTextColor(themeForm.secondary)
+                  }}
+                >
+                  Secondario
+                </div>
+                <div 
+                  className="h-12 rounded text-xs font-medium flex items-center justify-center border"
+                  style={{ 
+                    backgroundColor: themeForm.background,
+                    color: getTextColor(themeForm.background)
+                  }}
+                >
+                  Sfondo
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottone Salva */}
+          <button 
+            onClick={handleThemeSubmit} 
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+            style={{ 
+              backgroundColor: theme.primary,
+              color: '#FFFFFF'
+            }}
+          >
+            <Save className="w-5 h-5" />
+            Salva Tema
+          </button>
         </div>
       </div>
-
-      {/* Preview del tema */}
-      <div className="mt-8 p-6 border-2 rounded-lg bg-gray-50">
-        <h3 className="text-lg font-bold mb-4">{t.preview}</h3>
-        
-        {/* Preview Header */}
-        <div 
-          className="flex items-center gap-4 p-4 rounded-lg shadow mb-4"
-          style={{ 
-            backgroundColor: themeForm.secondary,
-            color: getTextColor(themeForm.secondary)
-          }}
-        >
-          {themeForm.appLogoUrl ? (
-            <img src={themeForm.appLogoUrl} alt="Logo" className="w-8 h-8 object-contain" />
-          ) : (
-            <Trophy className="w-8 h-8" style={{ color: themeForm.primary }} />
-          )}
-          <span className="text-xl font-bold">{themeForm.appTitle}</span>
-        </div>
-
-        {/* Preview Color Grid */}
-        <div className="grid grid-cols-3 gap-4">
-          <div 
-            className="p-4 rounded-lg text-center font-semibold shadow"
-            style={{ 
-              backgroundColor: themeForm.primary,
-              color: getTextColor(themeForm.primary)
-            }}
-          >
-            {t.primaryColor}
-          </div>
-          <div 
-            className="p-4 rounded-lg text-center font-semibold shadow"
-            style={{ 
-              backgroundColor: themeForm.secondary,
-              color: getTextColor(themeForm.secondary)
-            }}
-          >
-            {t.secondaryColor}
-          </div>
-          <div 
-            className="p-4 rounded-lg text-center font-semibold shadow border"
-            style={{ 
-              backgroundColor: themeForm.background,
-              color: getTextColor(themeForm.background)
-            }}
-          >
-            {t.backgroundColor}
-          </div>
-        </div>
-      </div>
-
-      {/* Bottone Salva */}
-      <button 
-        onClick={handleThemeSubmit} 
-        className="mt-6 px-8 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all"
-        style={{ 
-          backgroundColor: theme.primary,
-          color: '#FFFFFF'
-        }}
-      >
-        {t.saveTheme || "Salva Tema"}
-      </button>
     </div>
   );
 }
