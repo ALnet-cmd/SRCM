@@ -17,7 +17,8 @@ export default function ResultsManager({
     race_id: '', 
     driver_id: '', 
     position: '', 
-    points: '' 
+    points: '',
+    fastest_lap: false
   });
   const [error, setError] = useState('');
 
@@ -35,6 +36,15 @@ export default function ResultsManager({
     return results.some(result => 
       result.race_id === parseInt(raceId) && 
       result.driver_id === parseInt(driverId) && 
+      result.id !== excludeResultId
+    );
+  };
+
+  // Funzione per verificare se c'è già un giro veloce in questa gara
+  const hasFastestLapInRace = (raceId, excludeResultId = null) => {
+    return results.some(result => 
+      result.race_id === parseInt(raceId) && 
+      result.fastest_lap === true && 
       result.id !== excludeResultId
     );
   };
@@ -72,12 +82,19 @@ export default function ResultsManager({
       return;
     }
 
+    // Validazione giro veloce duplicato
+    if (resultForm.fastest_lap && hasFastestLapInRace(resultForm.race_id, editingResult)) {
+      setError('C\'è già un giro più veloce registrato per questa gara!');
+      return;
+    }
+
     try {
       const resultData = {
         race_id: resultForm.race_id,
         driver_id: resultForm.driver_id,
         position: resultForm.position.trim(),
-        points: resultForm.points.trim()
+        points: resultForm.points.trim(),
+        fastest_lap: resultForm.fastest_lap
       };
 
       let result;
@@ -105,7 +122,7 @@ export default function ResultsManager({
       }
 
       setEditingResult(null);
-      setResultForm({ race_id: '', driver_id: '', position: '', points: '' });
+      setResultForm({ race_id: '', driver_id: '', position: '', points: '', fastest_lap: false });
       alert('Risultato salvato con successo!');
       
     } catch (error) {
@@ -164,7 +181,14 @@ export default function ResultsManager({
       .map(result => result.position);
   };
 
+  // Controlla se c'è già un giro veloce nella gara selezionata
+  const hasExistingFastestLap = () => {
+    if (!resultForm.race_id) return false;
+    return hasFastestLapInRace(resultForm.race_id, editingResult);
+  };
+
   const takenPositions = getTakenPositions();
+  const existingFastestLap = hasExistingFastestLap();
 
   return (
     <div className="space-y-6">
@@ -256,6 +280,35 @@ export default function ResultsManager({
             </div>
           </div>
 
+          {/* Campo Giro più veloce */}
+          <div className="mt-4">
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border">
+              <input 
+                type="checkbox" 
+                checked={resultForm.fastest_lap} 
+                onChange={(e) => setResultForm({ ...resultForm, fastest_lap: e.target.checked })} 
+                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                id="fastest_lap"
+                disabled={existingFastestLap && !resultForm.fastest_lap}
+              />
+              <div className="flex-1">
+                <label htmlFor="fastest_lap" className="text-sm font-medium text-gray-700">
+                  Giro più veloce della gara
+                </label>
+                {existingFastestLap && !resultForm.fastest_lap && (
+                  <p className="text-xs text-orange-600 mt-1">
+                    ⚠️ C'è già un giro più veloce registrato in questa gara
+                  </p>
+                )}
+                {resultForm.fastest_lap && (
+                  <p className="text-xs text-green-600 mt-1">
+                    ✅ Questo pilota avrà il giro più veloce
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Informazioni di validazione */}
           {resultForm.race_id && (
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -263,6 +316,7 @@ export default function ResultsManager({
               <ul className="text-sm text-blue-700 space-y-1">
                 <li>• Non possono esserci due piloti con la stessa posizione nella stessa gara</li>
                 <li>• Un pilota non può avere più di un risultato per gara</li>
+                <li>• Può esserci solo un giro più veloce per gara</li>
                 <li>• Le posizioni devono essere numeri positivi</li>
               </ul>
             </div>
@@ -271,7 +325,10 @@ export default function ResultsManager({
           <div className="flex gap-2 mt-4">
             <button 
               onClick={handleResultSubmit} 
-              disabled={resultForm.position && takenPositions.includes(resultForm.position)}
+              disabled={
+                (resultForm.position && takenPositions.includes(resultForm.position)) ||
+                (resultForm.fastest_lap && existingFastestLap && !editingResult)
+              }
               className="px-6 py-3 text-white rounded-lg font-semibold transition-colors hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed" 
               style={{ backgroundColor: theme.primary }}
             >
@@ -281,7 +338,7 @@ export default function ResultsManager({
               <button 
                 onClick={() => { 
                   setEditingResult(null); 
-                  setResultForm({ race_id: '', driver_id: '', position: '', points: '' }); 
+                  setResultForm({ race_id: '', driver_id: '', position: '', points: '', fastest_lap: false }); 
                   setError('');
                 }} 
                 className="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold transition-colors hover:bg-gray-600"
@@ -304,6 +361,7 @@ export default function ResultsManager({
                 <th className="text-left p-4 text-white font-semibold">Team</th>
                 <th className="text-left p-4 text-white font-semibold">Pos</th>
                 <th className="text-left p-4 text-white font-semibold">Punti</th>
+                <th className="text-left p-4 text-white font-semibold">GV</th>
                 {canEdit && <th className="text-left p-4 text-white font-semibold">Azioni</th>}
               </tr>
             </thead>
@@ -328,6 +386,15 @@ export default function ResultsManager({
                   <td className="p-4 font-semibold text-center" style={{ color: theme.primary }}>
                     {result.points}
                   </td>
+                  <td className="p-4 text-center">
+                    {result.fastest_lap ? (
+                      <span className="inline-flex items-center justify-center w-6 h-6 bg-green-100 text-green-800 rounded-full text-xs font-bold" title="Giro più veloce">
+                        ★
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </td>
                   {canEdit && (
                     <td className="p-4">
                       <div className="flex gap-2">
@@ -338,7 +405,8 @@ export default function ResultsManager({
                               race_id: result.race_id, 
                               driver_id: result.driver_id, 
                               position: result.position, 
-                              points: result.points 
+                              points: result.points,
+                              fastest_lap: result.fastest_lap
                             }); 
                           }} 
                           className="text-blue-500 hover:text-blue-700 transition p-1"
