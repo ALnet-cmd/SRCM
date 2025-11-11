@@ -18,7 +18,6 @@ export default function ResultsManager({
     driver_id: '', 
     position: '', 
     points: '' 
-    // Rimossa fastest_lap perché non esiste nel database
   });
   const [error, setError] = useState('');
 
@@ -49,7 +48,6 @@ export default function ResultsManager({
         driver_id: resultForm.driver_id,
         position: resultForm.position.trim(),
         points: resultForm.points.trim()
-        // fastest_lap rimosso perché non esiste nel database
       };
 
       let result;
